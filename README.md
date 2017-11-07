@@ -31,7 +31,7 @@ use Cdo;
 use Postgres;
 
 proc main(){
-//Open connection with Postgres database. Parametrs are host,username, database, password
+//Open connection to Postgres database. Parametrs are host,username, database, password
 
 var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
 
@@ -100,7 +100,7 @@ use Cdo;
 use Mysql;
 
 proc main(){
-//Open connection with Postgres database. Parametrs are host,username, database, password
+//Open connection to Mysql database. Parametrs are host,username, database, password
 
 var con = MysqlConnectionFactory("localhost", "root", "teste", "root");
 
@@ -170,7 +170,7 @@ use Cdo;
 use Sqlite;
 
 proc main(){
-//Open connection with SQlite database. Parametrs is the file name.
+//Open connection to SQlite database. Parametrs is the file name.
 
 var con = SqliteConnectionFactory("teste.db");
 
