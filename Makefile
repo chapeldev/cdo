@@ -7,3 +7,9 @@ mysqlex:
 
 sqlitex:
 	chpl -o sqlitex ./examples/exsqlite.chpl    -M ./src
+
+clear:
+	rm	pgsql
+	rm	mysqlex
+	rm	sqlitex
+

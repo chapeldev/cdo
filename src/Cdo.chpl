@@ -180,6 +180,12 @@ pragma "no doc"
     }
 
 pragma "no doc"
+
+proc Begin(){
+
+}
+
+pragma "no doc"
     proc commit(){
 
     }
@@ -191,6 +197,11 @@ pragma "no doc"
     proc close(){
 
     }
+
+    proc setAutocommit(commit:bool){
+
+    }
+
 
 pragma "no doc"
     proc helloWorld(){

@@ -35,13 +35,20 @@ class MysqlConnection:ConnectionBase{
 
      var dsn:string;
      var conn:c_ptr(MYSQL);
+     var _autocommit:bool;
+     var _tmp_autocommit:bool;
 
      proc MysqlConnection(host:string, user:string="", database:string="", passwd:string=""){
         try{
+            this._autocommit=true;
+            this._tmp_autocommit=true;
+            
             //this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
            // writeln("conecting to ",this.dsn);
             
 			this.conn = mysql_init(this.conn);
+
+            
 
 			//this.conn = PQconnectdb(this.dsn.localize().c_str());
 
@@ -53,11 +60,11 @@ class MysqlConnection:ConnectionBase{
       		exit(1);
   		}  
 
-		  writeln("Database Conected");
+		  this.setAutocommit(true);
 
 
         }catch{
-                writeln("Postgres Connection to database exception");
+                writeln("Connection to database exception");
         }
          
      }
@@ -73,16 +80,48 @@ class MysqlConnection:ConnectionBase{
     proc cursor(){
         return new Cursor(new MysqlCursor(this,this.conn));
     }
+    proc Begin(){
+        this.setAutocommit(false);
+        mysql_query(this.conn,"START TRANSACTION;"); 
+    }
     proc commit(){
+
+        mysql_commit(this.conn);
+    
+        if(!this.isAutoCommit()&&(this._tmp_autocommit==true)){
+            this.setAutocommit(true);
+        }
+        
 
     }
     proc rollback(){
-
+        //mysql_query(this.conn, "ROLLBACK");
+        mysql_rollback(this.conn);
+        if(!this.isAutoCommit()&&(this._tmp_autocommit==true)){
+            this.setAutocommit(true);
+        }
     }
+
+    proc setAutocommit(commit:bool){
+        this._tmp_autocommit=this._autocommit;
+        this._autocommit=commit;
+
+        if(commit==true){
+            mysql_autocommit(this.conn, 1);
+            mysql_query(this.conn,"SET autocommit = 1;");
+        }else{
+            mysql_autocommit(this.conn, 0);
+            mysql_query(this.conn,"SET autocommit = 0;");
+        }
+    }
+
+    proc isAutoCommit():bool{
+        return this._autocommit;
+    }
+
+
     proc close(){
-
 		mysql_close(this.conn);
-
     }
 
 }

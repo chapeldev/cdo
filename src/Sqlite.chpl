@@ -60,6 +60,10 @@ class SqliteConnection:ConnectionBase{
     proc cursor(){
         return new Cursor(new SqliteCursor(this,this.conn));
     }
+    proc Begin(){
+
+    }
+    
     proc commit(){
 
     }

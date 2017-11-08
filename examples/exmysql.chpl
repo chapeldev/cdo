@@ -40,6 +40,31 @@ proc main(){
 
 
         cursor.close();
+
+
+// Warning: Transaction is not working propertly.
+    // Begins new transaction
+    con.Begin();
+
+    var command =" \
+    CREATE TABLE COMPANY(\
+   ID INT PRIMARY KEY     NOT NULL,\
+   NAME           TEXT    NOT NULL,\
+   AGE            INT     NOT NULL,\
+   ADDRESS        CHAR(50),\
+   SALARY         REAL\
+);";
+
+    var cursor2 = con.cursor();
+
+    cursor2.execute(command);
+
+    cursor2.close();
+
+// Commits the transaction
+//    con.commit();
+// Rolls back the operations
+    con.rollback(); 
         con.close();
         writeln("end");
     }

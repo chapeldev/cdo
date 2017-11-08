@@ -63,14 +63,49 @@ class PgConnection:ConnectionBase{
     proc cursor(){
         return new Cursor(new PgCursor(this,this.conn));
     }
+    proc Begin(){
+        var res = PQexec(this.conn, "BEGIN");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        {
+            //Todo: Improve error messages
+             //PQerrorMessage(conn));
+            PQclear(res);
+
+            halt("error");
+        }
+
+        PQclear(res);
+    }
+
     proc commit(){
+    var res = PQexec(this.conn, "COMMIT");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        {
+            //Todo: Improve error messages
+             //PQerrorMessage(conn));
+            PQclear(res);
+
+            halt("error");
+        }
+
+        PQclear(res);
 
     }
     proc rollback(){
+        var res = PQexec(this.conn, "ROLLBACK");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        {
+            //Todo: Improve error messages
+             //PQerrorMessage(conn));
+            PQclear(res);
+
+            halt("error");
+        }
+        PQclear(res);
 
     }
     proc close(){
-
+        PQfinish(this.conn);
     }
 
     proc __registerTypes(){
