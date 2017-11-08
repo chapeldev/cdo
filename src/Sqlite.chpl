@@ -44,7 +44,7 @@ class SqliteConnection:ConnectionBase{
 	        }
 
         }catch{
-                writeln("Postgres Connection to database exception");
+                writeln("Connection to database exception");
         }
          
      }
