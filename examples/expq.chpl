@@ -58,9 +58,9 @@ proc main(){
     cursor2.close();
 
 // Commits the transaction
-//    con.commit(); 
+   con.commit(); 
 // Rolls back the operations
- con.rollback();
+// con.rollback();
 
 
 

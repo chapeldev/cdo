@@ -38,6 +38,32 @@ proc main(){
         }
 
         cursor.close();
+
+    con.Begin();
+
+    var command =" \
+    CREATE TABLE COMPANY(\
+   ID  INTEGER PRIMARY KEY     NOT NULL,\
+   NAME           TEXT    NOT NULL,\
+   AGE            INT     NOT NULL,\
+   ADDRESS        TEXT,\
+   SALARY         REAL\
+);";
+    var cursor2 = con.cursor();
+
+    cursor2.execute(command);
+
+    cursor2.close();
+
+// Commits the transaction
+//    con.commit(); 
+// Rolls back the operations
+ con.rollback();
+
+
+
+
+
         con.close();
         writeln("end");
     }
