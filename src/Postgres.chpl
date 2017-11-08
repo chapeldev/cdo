@@ -89,7 +89,6 @@ class PgConnection:ConnectionBase{
         }
 
         PQclear(res);
-
     }
     proc rollback(){
         var res = PQexec(this.conn, "ROLLBACK");

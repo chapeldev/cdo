@@ -41,6 +41,7 @@ proc main(){
         cursor.close();
 
     // Begins new transaction
+    /*
     con.Begin();
 
     var command =" \
@@ -58,10 +59,31 @@ proc main(){
     cursor2.close();
 
 // Commits the transaction
-   con.commit(); 
+ //  con.commit(); 
 // Rolls back the operations
-// con.rollback();
+con.rollback();
+*/
 
+var cursor3 = con.cursor();
+
+    cursor.query("select name, email from contacts");
+
+    class MyContact{
+        var name:string;
+        var email:string;
+        proc init(){
+            this.name="";
+            this.email="";
+        }
+    }
+    var obj = cursor.fetchAsRecord(new MyContact());
+    while(obj!=nil){
+            //print the results.
+        writeln("** name = ",obj.name," *email = ",obj.email);
+            //get the next row one.
+        obj = cursor.fetchAsRecord(new MyContact());
+    }
+    
 
 
 

@@ -38,6 +38,8 @@ This module is focused on providing interfaces, base classes, and helpers that a
 
 module Cdo{
 
+use Reflection;
+
 pragma "no doc"
 enum CdoType{
     DATE,
@@ -253,6 +255,15 @@ pragma "no doc"
         return this.columns[colnum];
     }
 
+    proc hasColumn(name:string):bool{
+        for col in this.columns{
+            if(name == col.name){
+                return true;
+            }
+        }
+        return false;
+    }
+
 pragma "no doc"
     proc printColumns(){
         for col in this.columns{
@@ -351,6 +362,27 @@ pragma "no doc"
 
     proc fetchone():Row{
         return nil;
+    }
+
+    proc fetchAsRecord(ref el:?eltType):eltType{
+        //var el2: eltType = new eltType;
+        var row:Row = this.fetchone();
+
+        if(row==nil){
+            return nil;
+        }
+
+        for param i in 1..numFields(eltType) {
+            var fname = getFieldName(eltType,i);
+
+            if(hasColumn(fname)){
+             var s=row[fname];
+             
+              getFieldRef(el, i)=s;// =  row[fname];
+            }
+        }
+
+        return el;
     }
 
    /*
