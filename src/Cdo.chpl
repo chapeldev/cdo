@@ -371,13 +371,10 @@ pragma "no doc"
         if(row==nil){
             return nil;
         }
-
         for param i in 1..numFields(eltType) {
             var fname = getFieldName(eltType,i);
-
             if(hasColumn(fname)){
              var s=row[fname];
-             
               getFieldRef(el, i)=s;// =  row[fname];
             }
         }
@@ -456,5 +453,7 @@ class Connection{
 class Cursor{
     forwarding var cursor_drv: CursorBase;
 }
+
+
 
 }//end module
