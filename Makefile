@@ -1,5 +1,5 @@
 pgsql:
-	chpl -o expq ./examples/expq.chpl -M ./src
+	chpl -o expq ./examples/expq.chpl  -M ./src -I/usr/include/postgresql/ 
 
 #WArning, you should run `mysql_config --cflags --libs` in order to know the library path
 mysqlex:

@@ -19,8 +19,8 @@ module Postgres{
     use Cdo;
     use PostgresNative;
 
-    require "postgresql/libpq-fe.h";
-    require "stdio.h","-lpq";
+    require "libpq-fe.h","-lpq";
+    require "stdio.h";
 
 
 proc PgConnectionFactory(host:string, user:string="", database:string="", passwd:string=""):Connection{
