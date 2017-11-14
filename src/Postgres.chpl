@@ -18,6 +18,7 @@ module Postgres{
     use SysBasic;
     use Cdo;
     use PostgresNative;
+    use IO.FormattedIO;
 
     require "libpq-fe.h","-lpq";
     require "stdio.h";
@@ -107,6 +108,11 @@ class PgConnection:ConnectionBase{
         PQfinish(this.conn);
     }
 
+    proc table(table:string){
+        return new QueryBuilder(new PgQueryBuilder(this,table));
+    }
+
+
     proc __registerTypes(){
        /** this.__registerTypeName(20, parseBigInteger); // int8
         this.__registerTypeName(21, parseInteger); // int2
@@ -153,6 +159,10 @@ class PgConnection:ConnectionBase{
         this.__registerTypeName(1270, parseStringArray); // timetz[]
         */
   
+    }
+    proc dumpt(){
+        writeln();
+        
     }
 
 }
@@ -277,6 +287,7 @@ class PgCursor:CursorBase{
             i+=1;
         }
     }
+    
 
 
     proc executemany(str:string, pr){
@@ -382,11 +393,170 @@ class PgCursor:CursorBase{
     }
 }
 
+class PgQueryBuilder: QueryBuilderBase{
+   var sql:string="";
+   var conn:PgConnection;
+   var _orderby_declared:bool=false;
+
+   proc PgQueryBuilder(con:PgConnection, table:string){
+       this.conn = con;
+       
+       this.From(table);
+   }
 
 
+   proc Get(){
+    writeln("Get");   
+   }
 
+   proc toSql():string{
 
+       if(this._has("select")){
 
+           this._compileSelect();
+       
+       }
+       return this.sql;
+   }
+   proc __arrayToString(arr, delimiter:string=","):string{
+        
+        return delimiter.join(arr);
+    }
+
+   proc _compileSelect(){
+
+       this.sql +="SELECT ";
+
+       var dados = this._get("select").getData();
+       var cols = this.__arrayToString(dados);
+       this.sql += cols;
+        if(this._has("table")){
+            var table = this._get("table");
+            this.sql += " FROM "+table[1]+" ";
+        }
+        if(this._has("where")){
+            this._compileWhere();
+        }
+        if(this._has("orderByAsc")){
+            this._compileOrderByAsc();
+        }
+        if(this._has("orderByDesc")){
+            this._compileOrderByDesc();
+        }
+        if(this._has("groupBy")){
+            this._compileGroupBy();
+        }
+        if(this._has("limit")){
+            this._compileLimit();
+        }
+        if(this._has("offset")){
+            this._compileOffset();
+        }
+   }//end 
+   proc _compileWhere(){
+       if(this._has("where")){
+          var wopcodes =  this._get("where").getWhereData();
+          var i:int = 0;
+            this.sql += " WHERE ";
+            try{
+                for op in wopcodes{
+                    if(i == 0){
+                        if(op[2]=="IN"||op[2]=="NOT IN"){
+                            
+                            this.sql += " (\"%s\" %s %s) ".format(op[1],op[2], op[3]);
+                        }else{
+                            this.sql += " (\"%s\" %s %s) ".format(op[1],op[2], op[3]);
+                        }
+                    }else{
+                        if(op[2] == "IN"||op[2]=="NOT IN"){
+
+                        }else{
+                            
+                        }
+                        this.sql += " %s (\"%s\" %s %s) ".format(op[4], op[1], op[2], op[3]);
+                    }
+                    i += 1;
+                }
+            }catch{
+                writeln("Error where");
+            }
+        }
+        
+
+   }//end
+
+    proc _compileOrderByAsc(){
+
+        if(!this._orderby_declared){
+            this.sql += " ORDER BY ";
+            this._orderby_declared = true;
+        }else{
+           this.sql += ", ";
+ 
+        }
+
+        if(this._has("orderByAsc")){
+            try{
+            var columns =  this._get("orderByAsc").getData();
+            
+            this.sql += " "+(", ".join(columns));
+            }catch{
+                writeln("Error order by asc");
+            }
+        }
+    }
+
+    proc _compileOrderByDesc(){
+        if(!this._orderby_declared){
+            this.sql += " ORDER BY ";
+            this._orderby_declared=true;
+        }else{
+            this.sql += ", ";
+        }
+
+        if(this._has("orderByDesc")){
+            try{
+            var columns =  this._get("orderByDesc").getData();
+            this.sql += (" DESC, ".join(columns))+" DESC ";
+            }catch{
+                writeln("Error order by desc");
+            }
+        }
+    }
+    proc _compileGroupBy(){
+        if(this._has("groupBy")){
+            try{
+                var columns =  this._get("groupBy").getData();
+                this.sql += " GROUP BY "+(",".join(columns))+" ";
+            }catch{
+                writeln("Error order by desc");
+            }
+        }
+    }//end
+
+    proc _compileLimit(){
+        if(this._has("limit")){
+            try{
+                var value =  this._get("limit").getData();
+                this.sql += " LIMIT "+value[1]+" ";
+            }catch{
+                writeln("Error LIMIT");
+            }
+        }
+    }
+
+    proc _compileOffset(){
+        if(this._has("offset")){
+            try{
+                var value =  this._get("offset").getData();
+                this.sql += " OFFSET "+value[1]+" ";
+            }catch{
+                writeln("Error offset");
+            }
+        }
+    }
+
+}
 
 
 

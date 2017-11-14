@@ -205,10 +205,18 @@ pragma "no doc"
     }
 
 
-pragma "no doc"
+    pragma "no doc"
     proc helloWorld(){
         writeln("Hello from ConnectionBase");
     }
+
+    proc table(table:string):QueryBuilder{
+        return nil;
+    } 
+
+    
+
+
 
 }
 /*
@@ -346,6 +354,7 @@ pragma "no doc"
    proc dump(){
 
    }
+   
 
  pragma "no doc"
     proc executemany(str:string, pr){
@@ -439,6 +448,340 @@ pragma "no doc"
     }
 
 }
+
+type whereType = 4*string;
+
+class StatementData{
+    var op:string;
+    var data_dim:domain(1);
+    var data:[data_dim]string;
+
+    var where_data_dim:domain(1);
+    var where_data:[where_data_dim]whereType;
+
+    proc StatementData(op, data){
+        this.op = op;
+        this.data.push_back(data);
+    }
+
+    proc StatementData(op:string, data:whereType){
+        this.where_data.push_back(data);
+        this.op=op;
+    }
+    
+    proc this(i:int):string{
+        try{
+            if(this.op=="where"){
+                return this.where_data[i];
+            }else{
+                return this.data[i];
+            }
+        }catch{
+            writeln("Error Statement Data");
+        }
+    }
+
+    iter these()ref:string{
+        try{
+            if(this.op=="where"){
+                for obj in this.where_data{
+                    yield obj;
+                }
+            }else{
+                for obj in this.data{
+                    yield obj;
+                }
+            }
+        }catch{
+            writeln("Error Statement Data");
+        }
+    }
+
+    proc append(data:string){
+        this.data.push_back(data);
+    }
+    proc append(data:[?D]string){
+        this.data.push_back(data);
+    }
+    proc append(data:whereType){
+        this.where_data.push_back(data);
+    }
+
+    proc setData(data){
+        this.data=data;
+    }
+    proc getData(){
+        return this.data;
+    }
+    proc getWhereData(){
+        return this.where_data;
+    }
+    
+    proc writeThis(f){
+        try{
+            if(this.op=="where"){
+                for c in this.where_data{
+                    f.writeln("Op:",this.op," *data=",c);
+                }
+            }else{
+                for c in this.data{
+                    f.writeln("Op:",this.op," data=",c);
+                }
+            }
+        }catch{
+            writeln("Error on write");
+        }
+    }
+}
+
+class StatementCompiler{
+    var _statements_dim:domain(string);
+    var _statements:[_statements_dim]StatementData;
+
+    proc init(stmt:[?D]StatementData){
+       this._statements = stmt;
+       this._statements_dim = D;
+    }
+
+    proc has(opname:string):bool{
+        return this._statements_dim.member(opname);
+    }
+
+    proc get(opname):StatementData{
+        return this._statements[opname];
+    }
+}
+
+
+
+class QueryBuilderBase{
+
+    var _where_cond_dim:domain(1);
+    var _where_cond:[_where_cond_dim]whereType;
+
+    var _column_names_dom: domain(1);
+    var _column_names: [_column_names_dom]string;
+
+    var table:string = "";
+    var con:Connection;
+
+    var _optype_dim:domain(1);
+    var _optype:[_optype_dim]string;
+
+    var _statements_dim:domain(string);
+    var _statements:[_statements_dim]StatementData;
+
+    var sql="";
+
+
+    proc QueryBuilderBase(){
+
+    }
+
+
+    proc _addStatement(key,value){
+        this._statements[key] = value;
+    }
+
+    proc Select(){
+
+        if(this._statements_dim.member("select")){
+            var stdata = this._statements["select"];
+            stdata.append("*");
+        }else{
+            this._statements["select"] = new StatementData("select",["*"]);
+        }
+        return this;
+    }
+    proc Select(columns:[?D]string){
+        if(this._statements_dim.member("select")){
+            var stdata = this._statements["select"];
+            stdata.append(columns);
+        }else{
+            this._statements["select"] = new StatementData("select",columns);
+        }
+        return this;
+    }
+
+    proc From(table){
+        if(this._statements_dim.member("from")){
+            var stdata = this._statements["from"];
+            stdata.append(table);
+        }else{
+            this._statements["table"] = new StatementData("table",[table]);
+        }
+        return this;
+    }
+
+    proc Where(column:string, value, concat_op="AND"){
+        return this.Where(column,"=",value,concat_op);
+    }
+
+    proc Where(column:string, op:string, value, concat_op="AND"){
+
+        var ops:whereType = (column ,op, value,concat_op);
+       
+        if(this._statements_dim.member("where")){
+            var stdata = this._statements["where"];
+            stdata.append(ops);
+        }else{
+            this._statements["where"] = new StatementData("where",ops);
+        }
+
+        return this;
+    }
+    proc WhereIn(column:string, values:[?D]string ,concat_op="AND"){
+        var ops:whereType = (column ,"IN", value,concat_op);
+       
+        if(this._statements_dim.member("whereIn")){
+            var stdata = this._statements["whereIn"];
+            stdata.append(ops);
+        }else{
+            this._statements["whereIn"] = new StatementData("whereIn",ops);
+        }
+        
+        return this;
+    }
+    proc WhereNotIn( column:string, op:string, value,concat_op="AND"){
+        
+    }
+
+    proc WhereNotNull( column:string,concat_op="AND"){
+
+    }
+
+    proc WhereBetween( column:string, op:string, value,concat_op="AND"){
+
+    }
+
+    proc orWhere( column:string, value){
+        return this.Where( column, "=", value, "OR");
+    }
+
+    proc orWhere( column:string, op:string, value){
+        return this.Where( column, op, value, "OR");
+    }
+
+    proc Count(){
+
+    }
+    proc Delete(){
+
+    }
+
+    proc OrderBy(column){
+        if(this._statements_dim.member("orderByAsc")){
+            var stdata = this._statements["orderByAsc"];
+            stdata.append(column);
+        }else{
+            this._statements["orderByAsc"] = new StatementData("orderByAsc",column);
+        }
+        return this;
+    }
+
+    
+    proc OrderBy(columns:[?D]string){
+        if(this._statements_dim.member("orderByAsc")){
+            var stdata = this._statements["orderByAsc"];
+            stdata.append(columns);
+        }else{
+            this._statements["orderByAsc"] = new StatementData("orderByAsc",columns);
+        }
+        return this;
+    }
+
+
+    proc OrderByDesc(column){
+        if(this._statements_dim.member("orderByDesc")){
+            var stdata = this._statements["orderByDesc"];
+            stdata.append(column);
+        }else{
+            this._statements["orderByDesc"] = new StatementData("orderByDesc",column);
+        }
+        
+        return this;
+    }
+
+    proc OrderByDesc(columns:[?D]string){
+        if(this._statements_dim.member("orderByDesc")){
+            var stdata = this._statements["orderByDesc"];
+            stdata.append(columns);
+        }else{
+            this._statements["orderByDesc"] = new StatementData("orderByDesc",columns);
+        }
+        return this;
+    }
+    proc GroupBy(column){
+        if(this._statements_dim.member("groupBy")){
+            var stdata = this._statements["groupBy"];
+            stdata.append(column);
+        }else{
+            this._statements["groupBy"] = new StatementData("groupBy",column);
+        }
+
+        return this;
+    }
+
+    proc GroupBy(columns:[?D]string){
+        if(this._statements_dim.member("groupBy")){
+            var stdata = this._statements["groupBy"];
+            stdata.append(columns);
+        }else{
+            this._statements["groupBy"] = new StatementData("groupBy",columns);
+        }
+        return this;
+    }
+    proc Limit(i:int){
+        if(this._statements_dim.member("limit")){
+            var stdata = this._statements["limit"];
+            stdata.setData([i:string]);
+        }else{
+            this._statements["limit"] = new StatementData("limit",[i:string]);
+        }   
+        return this;
+    }
+    proc Offset(i:int){
+        if(this._statements_dim.member("offset")){
+            var stdata = this._statements["offset"];
+            stdata.setData([i:string]);
+        }else{
+            this._statements["offset"] = new StatementData("offset",[i:string]);
+        }
+        return this;
+    }
+
+    proc toSql():string{
+        return "";
+    }
+
+    proc Get(){
+        
+    }
+
+    proc writeThis(f){
+        try{
+            for c in this._statements{
+                f.writeln(c);
+            }
+        }catch{
+            writeln("Error on write");
+        }
+    }
+
+    proc _has(opname:string):bool{
+        return this._statements_dim.member(opname);
+    }
+
+    proc _get(opname):StatementData{
+        return this._statements[opname];
+    }
+
+
+}
+
+
+
+
 /*
 
 `Connection` forwarding contract interface-like class.
@@ -454,6 +797,13 @@ class Cursor{
     forwarding var cursor_drv: CursorBase;
 }
 
+class QueryBuilder{
+    forwarding var query_driver: QueryBuilderBase;
+
+    proc writeThis(f){
+        this.query_driver.writeThis(f);
+    }
+}
 
 
 }//end module
