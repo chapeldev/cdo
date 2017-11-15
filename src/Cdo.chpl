@@ -776,6 +776,27 @@ class QueryBuilderBase{
         return this._statements[opname];
     }
 
+    proc Insert(columns:[?D]string,  values:[?D2]string){
+        
+        var d:[{1..0}]string;
+
+        d.push_back(columns);
+        d.push_back(values);
+        
+        if(this._statements_dim.member("insert")){
+            var stdata = this._statements["insert"];
+            stdata.setData(d);
+        }else{
+            this._statements["insert"] = new StatementData("insert",d);
+        }
+        return this;
+
+    }
+
+    proc Insert(data:[?D]string){
+
+    }
+
 
 }
 

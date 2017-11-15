@@ -288,26 +288,18 @@ class PgCursor:CursorBase{
         }
     }
     
-
-
-    proc executemany(str:string, pr){
-
+    proc executemany(str:string, data:[?D]?eltType){
         try{
-
-            writeln(str.format((...pr)));
-
+           for datum in data{
+               writeln(str.format((...datum)));
+           }
         }catch{
             writeln("Error");
         }
-        
-        
-        //for p in pr{
-            //writeln(p);
-        //}
     }
 
     proc fetchrow(idx:int):Row{
-        if(idx>this.rowcount()){
+        if(idx > this.rowcount()){
             return nil;
         }
         var row = new Row();
@@ -319,7 +311,6 @@ class PgCursor:CursorBase{
         while(j < this.nFields){
                 var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
                 var colinfo = this.getColumnInfo(j);
-                //writeln("Columns ",colinfo.name, " Datum ",datum);
                 row.addData(colinfo.name,datum);
                 j += 1;
         }
@@ -397,6 +388,7 @@ class PgQueryBuilder: QueryBuilderBase{
    var sql:string="";
    var conn:PgConnection;
    var _orderby_declared:bool=false;
+   var _operation_type:string;
 
    proc PgQueryBuilder(con:PgConnection, table:string){
        this.conn = con;
@@ -412,9 +404,18 @@ class PgQueryBuilder: QueryBuilderBase{
    proc toSql():string{
 
        if(this._has("select")){
-
+           this._operation_type="select";
            this._compileSelect();
-       
+       }else if(this._has("insert")){
+           this._operation_type="insert";
+           this._compileInsert();
+       }else if(this._has("update")){
+           this._operation_type="update";
+           this._compileUpdate();
+       }else if(this._has("delete")){
+           this._operation_type="delete";
+           this._compileDelete();
+       }else{
        }
        return this.sql;
    }
@@ -554,7 +555,17 @@ class PgQueryBuilder: QueryBuilderBase{
                 writeln("Error offset");
             }
         }
-    }
+    }//end
+
+    proc _compileInsert(){
+
+    }//end
+    proc _compileUpdate(){
+
+    }//end
+    proc _compileDelete(){
+
+    }//end
 
 }
 
