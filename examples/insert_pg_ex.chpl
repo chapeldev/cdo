@@ -4,11 +4,10 @@ use Postgres;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
-
         var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
         //Open a cursor
         var cursor = con.cursor();
- /*     
+      
     // Type for single datum
     type DataTuple = 2*string;
 
@@ -24,8 +23,7 @@ proc main(){
         cursor.execute("INSERT INTO public.contacts(\"name\",\"email\") VALUES ('%s','%s')",datum);
     }
 
-    */
-
+// class holding the data 
     class MyContact{
       var name:string;
       var email:string;
@@ -36,6 +34,7 @@ proc main(){
     }
 
     var obj = new MyContact("Maria", "maria@marcos.com.br");
+    // Insert object into database.
     writeln(cursor.insertRecord("public.contacts", obj));
 //Select 
     cursor.query("SELECT * FROM public.contacts");
@@ -46,7 +45,6 @@ proc main(){
 
     cursor.close();
     con.close();
-  
     writeln("End");
   }
 }
