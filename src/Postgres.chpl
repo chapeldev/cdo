@@ -382,6 +382,57 @@ class PgCursor:CursorBase{
     proc messages(){
 
     }
+
+    proc __quote_columns(colname:string):string{
+        return "\""+colname+"\"";
+    }
+    proc __quote_values(value:string):string{
+        return "'"+value+"'";
+    }
+
+    proc insertRecord(table:string, ref el:?eltType):string{
+        
+        var cols = this.__objToArray(el);
+
+        return this.insert(table, cols);
+                
+        /*for idx in cols.domain{
+            colset.push_back(this.__quote_columns(idx));
+            valset.push_back(this.__quote_values(cols[idx]));
+        }
+        var cols_part = ", ".join(colset);
+        var vals_part = ", ".join(valset);
+        var sql="";
+        try{
+            sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
+
+        }catch{
+            writeln("Error on building insert query");
+        }
+         return sql; */       
+    }
+    proc insert(table:string, data:[?D]string):string{
+        
+        var colset:[{1..0}]string;
+        var valset:[{1..0}]string;
+
+         for idx in D{
+            colset.push_back(this.__quote_columns(idx));
+            valset.push_back(this.__quote_values(data[idx]));
+        }
+        var cols_part = ", ".join(colset);
+        var vals_part = ", ".join(valset);
+        var sql="";
+        try{
+            sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
+        }catch{
+            writeln("Error on building insert query");
+        }
+
+         this.execute(sql);
+
+         return sql;
+    }
 }
 
 class PgQueryBuilder: QueryBuilderBase{

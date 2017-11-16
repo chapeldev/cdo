@@ -40,6 +40,20 @@ module Cdo{
 
 use Reflection;
 
+
+
+pragma "no doc"
+class Model{
+    var _table:string;
+    var _primary_key="id";
+    var dbCon:Connection;
+    proc Model(dbCon:Connection){
+    
+    }
+}
+
+
+
 pragma "no doc"
 enum CdoType{
     DATE,
@@ -94,7 +108,7 @@ class Row{
         if(this.rowColDomain.member(colname)){
             return this.data[colname];
         }else{
-            return nil;
+            return "";
         }
     }
 /*
@@ -122,16 +136,16 @@ class Row{
 */
 
     proc this(colnum:int):string{
-        var i=1;
+        var i = 1;
         for idx in this.rowColDomain{
             if(i == colnum){
                 return this.data[idx];
             }
             i+=1;
         }
-        return nil;
+        return "";
     }
-    pragma "no doc"
+    /*pragma "no doc"
     proc writeThis(f){
         try{
             for col in this.rowColDomain{
@@ -143,6 +157,7 @@ class Row{
             writeln("Cannot Write Row");//todo: improves messages with log
         }
     }
+*/
 
 }
 
@@ -178,6 +193,7 @@ pragma "no doc"
     proc getNativeConection():opaque{
 
         //todo:
+        return nil;
 
     }
 
@@ -391,6 +407,45 @@ pragma "no doc"
         return el;
     }
 
+    pragma "no doc"
+    
+    proc __objToArray(ref el:?eltType){
+
+        var cols_dim:domain(string);
+        var cols:[cols_dim]string;
+
+        for param i in 1..numFields(eltType) {
+            var fname = getFieldName(eltType,i);
+            var value = getFieldRef(el, i);// =  row[fname];
+            cols[fname:string] = value:string;
+        }
+
+        return cols;
+    }
+    /*
+    `insertRecord` inserts data from (object) record/class  fields into database  table.
+        :arg table: `string` name of the datbase table.
+        :type el: `?eltType` Object containing the data in class/record fields. 
+        :return: Insert sql generted to do the insert operation.
+        :rtype: `string`
+    */
+    proc insertRecord(table:string, ref el:?eltType):string{
+        
+        return "";
+    }
+
+
+/*
+    `insert` inserts associative array into database  table.
+        :arg table: `string` name of the database table.
+        :type data: `[?D]string` Associative array with columns name as index. 
+        :return: Insert sql generted to do the insert operation.
+        :rtype: `string`
+    */
+    proc insert(table:string, data:[?D]string):string{
+        return "";
+    }
+
    /*
     `fetchmany` iterates on `count` rows.
 
@@ -420,7 +475,7 @@ pragma "no doc"
     :rtype: `Row`
     */
     proc this(idx:int):Row{
-        return nil;
+        
     }
 
     /*
@@ -821,9 +876,9 @@ class Cursor{
 class QueryBuilder{
     forwarding var query_driver: QueryBuilderBase;
 
-    proc writeThis(f){
+    /*proc writeThis(f){
         this.query_driver.writeThis(f);
-    }
+    }*/
 }
 
 
