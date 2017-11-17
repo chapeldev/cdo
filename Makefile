@@ -4,7 +4,10 @@ query_builder_ex:
 
 insert_pg_ex:
 	chpl -o ./bin/insert_pg_ex ./examples/insert_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
-	 
+
+update_pg_ex:
+	chpl -o ./bin/update_pg_ex ./examples/update_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
+
 pgsql:
 	chpl -o ./bin/expq ./examples/expq.chpl  -M ./src -I/usr/include/postgresql/ 
 

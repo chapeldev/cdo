@@ -446,6 +446,20 @@ pragma "no doc"
         return "";
     }
 
+    proc update(table:string, whereCond:string, data:[?D]string):string{
+        return "";
+    }
+
+    proc updateRecord(table:string, whereCond:string, data:[?D]string):string{
+        return "";
+    }
+    
+    proc update(table:string, whereCond:string, ref el:?eltType):string{
+        return "";
+    }
+
+   
+
    /*
     `fetchmany` iterates on `count` rows.
 

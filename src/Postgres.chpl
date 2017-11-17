@@ -382,37 +382,18 @@ class PgCursor:CursorBase{
     proc messages(){
 
     }
-
     proc __quote_columns(colname:string):string{
         return "\""+colname+"\"";
     }
     proc __quote_values(value:string):string{
         return "'"+value+"'";
     }
-
     proc insertRecord(table:string, ref el:?eltType):string{
-        
+
         var cols = this.__objToArray(el);
-
-        return this.insert(table, cols);
-                
-        /*for idx in cols.domain{
-            colset.push_back(this.__quote_columns(idx));
-            valset.push_back(this.__quote_values(cols[idx]));
-        }
-        var cols_part = ", ".join(colset);
-        var vals_part = ", ".join(valset);
-        var sql="";
-        try{
-            sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
-
-        }catch{
-            writeln("Error on building insert query");
-        }
-         return sql; */       
+        return this.insert(table, cols);       
     }
     proc insert(table:string, data:[?D]string):string{
-        
         var colset:[{1..0}]string;
         var valset:[{1..0}]string;
 
@@ -428,11 +409,34 @@ class PgCursor:CursorBase{
         }catch{
             writeln("Error on building insert query");
         }
-
          this.execute(sql);
-
          return sql;
     }
+    proc update(table:string, whereCond:string, data:[?D]string):string{
+        var colvalset:[{1..0}]string; 
+        for idx in D{
+            colvalset.push_back(this.__quote_columns(idx)+" = "+this.__quote_values(data[idx]));
+        }
+        var colsvals_part = ", ".join(colvalset);
+        var sql="";
+        try{
+            sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
+        }catch{
+            writeln("Error on building update query");
+        }
+         this.execute(sql);
+         return sql;
+    }
+
+    proc update(table:string, whereCond:string, ref el:?eltType):string{
+        var cols = this.__objToArray(el);
+        return this.update(table, whereCond, cols);
+    }
+    
+    proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
+        return this.update(table,whereCond,el);
+    }
+
 }
 
 class PgQueryBuilder: QueryBuilderBase{
@@ -442,11 +446,9 @@ class PgQueryBuilder: QueryBuilderBase{
    var _operation_type:string;
 
    proc PgQueryBuilder(con:PgConnection, table:string){
-       this.conn = con;
-       
+       this.conn = con;       
        this.From(table);
    }
-
 
    proc Get(){
     writeln("Get");   
