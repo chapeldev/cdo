@@ -453,8 +453,8 @@ pragma "no doc"
     proc updateRecord(table:string, whereCond:string, data:[?D]string):string{
         return "";
     }
-    
-    proc update(table:string, whereCond:string, ref el:?eltType):string{
+
+    proc Delete(table:string, whereCond:string):string{
         return "";
     }
 

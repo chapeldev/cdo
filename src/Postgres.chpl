@@ -432,9 +432,20 @@ class PgCursor:CursorBase{
         var cols = this.__objToArray(el);
         return this.update(table, whereCond, cols);
     }
-    
+
     proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
         return this.update(table,whereCond,el);
+    }
+
+    proc Delete(table:string, whereCond:string):string{
+        var sql ="";
+        try{
+            sql = "DELETE FROM %s WHERE (%s)".format(table,whereCond);
+        }catch{
+            writeln("Error on formating delete statement");
+        }
+        this.execute(sql);
+        return sql;
     }
 
 }
