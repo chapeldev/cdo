@@ -383,6 +383,7 @@ class PgCursor:CursorBase{
 
     }
     proc __quote_columns(colname:string):string{
+        
         return "\""+colname+"\"";
     }
     proc __quote_values(value:string):string{
@@ -436,7 +437,6 @@ class PgCursor:CursorBase{
     proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
         return this.update(table,whereCond,el);
     }
-
     proc Delete(table:string, whereCond:string):string{
         var sql ="";
         try{
@@ -447,26 +447,46 @@ class PgCursor:CursorBase{
         this.execute(sql);
         return sql;
     }
-
 }
 
 class PgQueryBuilder: QueryBuilderBase{
    var sql:string="";
    var conn:PgConnection;
+   var cursor:Cursor;
+
+
    var _orderby_declared:bool=false;
    var _operation_type:string;
 
    proc PgQueryBuilder(con:PgConnection, table:string){
        this.conn = con;       
        this.From(table);
+       this.cursor = con.cursor();
    }
 
-   proc Get(){
-    writeln("Get");   
+   iter Get():Row{
+    this.cursor.query(this.toSql());
+
+        var res:Row = this.cursor.fetchone();
+        while(res!=nil){
+            yield res;
+            res = this.cursor.fetchone();
+        }
+
+    //yield this.cursor.fetchone();
+       
    }
+   /*proc GetAsArray(){
+      var data:[{1..0}]Row;
+      this.cursor.query(this.toSql());
+      for row in this.cursor.fetchall(){
+          data.push_back(row);
+      }
+
+    return data;
+   }*/
 
    proc toSql():string{
-
        if(this._has("select")){
            this._operation_type="select";
            this._compileSelect();
@@ -483,17 +503,80 @@ class PgQueryBuilder: QueryBuilderBase{
        }
        return this.sql;
    }
-   proc __arrayToString(arr, delimiter:string=","):string{
+
+    proc Count(){
+        var col = "COUNT(*) AS count_all";
+        return this.Select([col]);
+    }
+
+    proc Count(colname:string){
+        var col = "COUNT("+this.__quote_columns(colname)+") AS count_"+colname;
+        return this.Select([col]);
+    }
+
+
+   proc __arrayToString(arr, delimiter:string=", "):string{
         
         return delimiter.join(arr);
     }
 
+    proc __quote_columns(colname:string):string{
+        return "\""+colname+"\"";
+    }
+    proc __quote_values(value:string):string{
+        return "'"+value+"'";
+    }
+
+    proc __contaisAggregateFunctions(code):bool{
+        var aggegates:[{1..0}]string;
+            aggegates.push_back("COUNT");
+            aggegates.push_back("MAX");
+            aggegates.push_back("MIN");
+            aggegates.push_back("AVG");
+            aggegates.push_back("SUM");
+        
+        for f in aggegates{
+
+            if(code.find(f)>0){
+                return true;
+            }
+        }
+
+        return false;
+    }
+    proc __preprocessColumnAlias(code):string{
+
+        if(code.find(" AS ")>0){
+            var chunk:[1..0]string;
+            var i = 0;
+            for part in code.split(" AS "){
+                  if(i == 0){
+                      writeln("column: ",part," Contains "+this.__contaisAggregateFunctions(part));
+                      if(this.__contaisAggregateFunctions(part)){
+                          chunk.push_back(part);
+                      }else{
+                          chunk.push_back(this.__quote_columns(part));
+                      }
+                  }else{
+                      chunk.push_back(this.__quote_columns(part));
+                  }
+                  i += 1;
+            }
+            return " AS ".join(chunk); 
+        }
+
+        return this.__quote_columns(code);
+    }
    proc _compileSelect(){
 
        this.sql +="SELECT ";
-
        var dados = this._get("select").getData();
+       for col in dados{
+           col = this.__preprocessColumnAlias(col);
+       }
+
        var cols = this.__arrayToString(dados);
+
        this.sql += cols;
         if(this._has("table")){
             var table = this._get("table");
@@ -528,9 +611,9 @@ class PgQueryBuilder: QueryBuilderBase{
                     if(i == 0){
                         if(op[2]=="IN"||op[2]=="NOT IN"){
                             
-                            this.sql += " (\"%s\" %s %s) ".format(op[1],op[2], op[3]);
+                            this.sql += " (\"%s\" %s %s) ".format(op[1],op[2],this.__quote_values(op[3]));
                         }else{
-                            this.sql += " (\"%s\" %s %s) ".format(op[1],op[2], op[3]);
+                            this.sql += " (\"%s\" %s %s) ".format(op[1],op[2], this.__quote_values(op[3]));
                         }
                     }else{
                         if(op[2] == "IN"||op[2]=="NOT IN"){

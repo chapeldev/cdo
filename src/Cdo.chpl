@@ -682,8 +682,8 @@ class QueryBuilderBase{
         return this;
     }
 
-    proc Where(column:string, value, concat_op="AND"){
-        return this.Where(column,"=",value,concat_op);
+    proc Where(column:string, value){
+        return this.Where(column,"=",value,"AND");
     }
 
     proc Where(column:string, op:string, value, concat_op="AND"){
@@ -696,44 +696,58 @@ class QueryBuilderBase{
         }else{
             this._statements["where"] = new StatementData("where",ops);
         }
+        return this;
+    }
+    proc WhereIn(column:string, values:[?D]string ,concat_op="AND"){ 
+        var value = "("+(" ,".join(values))+")";
+        return this.Where(column,"IN",value,concat_op);
+    }
+    proc WhereNotIn( column:string, values:[?D]string, value,concat_op="AND"){
+        var value = "("+(" ,".join(values))+")";
 
-        return this;
-    }
-    proc WhereIn(column:string, values:[?D]string ,concat_op="AND"){
-        var ops:whereType = (column ,"IN", value,concat_op);
-       
-        if(this._statements_dim.member("whereIn")){
-            var stdata = this._statements["whereIn"];
-            stdata.append(ops);
-        }else{
-            this._statements["whereIn"] = new StatementData("whereIn",ops);
-        }
-        
-        return this;
-    }
-    proc WhereNotIn( column:string, op:string, value,concat_op="AND"){
-        
+        return this.Where(column,"NOT IN",value,concat_op);
     }
 
     proc WhereNotNull( column:string,concat_op="AND"){
-
+        return this.Where(column,"IS NOT NULL"," ",concat_op);
     }
 
-    proc WhereBetween( column:string, op:string, value,concat_op="AND"){
+    proc WhereBetween( column:string, low_bound:string, upper_bound:string, concat_op="AND"){
+        var value = low_bound+" AND "+upper_bound;
+        return this.Where(column,"BETWEEN",value,concat_op);
+    }
 
+    proc WhereNotBetween( column:string, low_bound:string, upper_bound:string, concat_op="AND"){
+        var value = low_bound+" AND "+upper_bound;
+        return this.Where(column,"NOT BETWEEN",value,concat_op);
     }
 
     proc orWhere( column:string, value){
         return this.Where( column, "=", value, "OR");
     }
 
+    
     proc orWhere( column:string, op:string, value){
         return this.Where( column, op, value, "OR");
     }
-
-    proc Count(){
-
+    
+    proc orWhereIn(column:string, values:[?D]string){
+        return this.WhereIn(column,values,"OR");
     }
+    
+    proc orWhereNotIn(column:string, values:[?D]string ){
+        return this.WhereNotIn(column,values,"OR");
+    }
+
+    proc orWhereBetween( column:string, low_bound:string, upper_bound:string){
+        return this.WhereBetween(column,low_bound, upper_bound,"OR");
+    }
+    proc orWhereNotBetween(column:string, low_bound:string, upper_bound:string){
+        return this.WhereNotBetween(column,low_bound, upper_bound,"OR");
+    }
+
+    
+
     proc Delete(){
 
     }
@@ -823,9 +837,18 @@ class QueryBuilderBase{
         return "";
     }
 
-    proc Get(){
+    proc Count(){ 
+         return this;
+    }
+
+    proc Count(colname:string){ 
+         return this;
+    }
+
+    iter Get():Row{
         
     }
+    
 
     proc writeThis(f){
         try{
