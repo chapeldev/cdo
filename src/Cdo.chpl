@@ -780,9 +780,25 @@ class QueryBuilderBase{
     proc fullJoin(table:string, column1:string, column2:string){
         return this.Join(table, column1, "=", column2, "RIGHT", "AND");
     }
-    proc Delete(){
-
+    proc Insert(data:[?D]string){
+        
     }
+
+    proc Delete(){
+        
+        if(this._statements_dim.member("delete")){
+            var stdata = this._statements["delete"];
+            stdata.append("*");
+        }else{
+            this._statements["delete"] = new StatementData("delete",["*"]);
+        }
+        
+        return this;
+    }
+    proc Delete(column:string,value:string){
+        return this.Delete().Where(column,value);
+    }
+
     proc OrderBy(column){
         if(this._statements_dim.member("orderByAsc")){
             var stdata = this._statements["orderByAsc"];
@@ -885,6 +901,10 @@ class QueryBuilderBase{
     iter Get():Row{
         
     }
+    proc Exec(){
+        
+    }
+
 
     proc clear(){
         this.sql="";
@@ -910,26 +930,7 @@ class QueryBuilderBase{
         return this._statements[opname];
     }
 
-    proc Insert(columns:[?D]string,  values:[?D2]string){
-        
-        var d:[{1..0}]string;
-
-        d.push_back(columns);
-        d.push_back(values);
-        
-        if(this._statements_dim.member("insert")){
-            var stdata = this._statements["insert"];
-            stdata.setData(d);
-        }else{
-            this._statements["insert"] = new StatementData("insert",d);
-        }
-        return this;
-
-    }
-
-    proc Insert(data:[?D]string){
-
-    }
+    
 
 
 }

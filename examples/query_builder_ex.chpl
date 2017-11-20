@@ -60,8 +60,13 @@ module Main{
           .rightJoin("company AS C2","c2.id","contacts.company_id").Count());
 
             
-            writeln(query.toSql());
-            con.close();  
-            writeln("end");
+          writeln(query.toSql());
+          query.clear();
+
+          query.Delete("id","16");
+          
+          writeln(query.toSql());
+          con.close();
+          writeln("end");
     }
 }

@@ -477,8 +477,11 @@ class PgQueryBuilder: QueryBuilderBase{
             res = this.cursor.fetchone();
         }
 
-    //yield this.cursor.fetchone();
-       
+    //yield this.cursor.fetchone();     
+   }
+
+   proc Exec(){
+       this.cursor.execute(this.compileSql());
    }
    /*proc GetAsArray(){
       var data:[{1..0}]Row;
@@ -491,6 +494,7 @@ class PgQueryBuilder: QueryBuilderBase{
    }*/
 
     proc toSql():string{
+        //this.compileSql();
         return this.sql;
     }
    proc compileSql():string{
@@ -498,7 +502,6 @@ class PgQueryBuilder: QueryBuilderBase{
            this._operation_type="select";
            this._compileSelect();
            //return this.sql;
-
        }else if(this._has("insert")){
            this._operation_type="insert";
            this._compileInsert();
@@ -533,9 +536,7 @@ class PgQueryBuilder: QueryBuilderBase{
         this.cursor.query(this.compileSql());
         var row = this.cursor.fetchone();
         return row["count_all"]:int; 
-        
     }
-
     proc Count(colname:string){
         var alias_colname = colname.replace(".","_");
         var col = "COUNT("+this.__quote_columns(colname)+") AS count_"+alias_colname;
@@ -574,6 +575,10 @@ class PgQueryBuilder: QueryBuilderBase{
         return row[prefix+alias_colname]:real;
     }
 
+    proc Insert(data:[?D]string){
+        this.cursor.insert(this.table,data);
+        return this;
+    }
 
    proc __arrayToString(arr, delimiter:string=", "):string{
         return delimiter.join(arr);
@@ -609,11 +614,8 @@ class PgQueryBuilder: QueryBuilderBase{
                 return true;
             }
         }
-
         return false;
-    
     }
-    
     proc __preprocessColumnAlias(code):string{
 
         if(code.find(" AS ")>0){
@@ -621,7 +623,7 @@ class PgQueryBuilder: QueryBuilderBase{
             var i = 0;
             for part in code.split(" AS "){
                   if(i == 0){
-                      writeln("column: ",part," Contains "+this.__contaisAggregateFunctions(part));
+                      //writeln("column: ",part," Contains "+this.__contaisAggregateFunctions(part));
                       if(this.__contaisAggregateFunctions(part)){
                           chunk.push_back(part);
                       }else{
@@ -801,6 +803,13 @@ class PgQueryBuilder: QueryBuilderBase{
     }//end
     proc _compileDelete(){
 
+        if (this._has("delete")) {
+
+            this.sql = "DELETE FROM "+this.table+" ";
+            if (this._has("delete")) {
+                this._compileWhere();
+            }
+        }
     }//end
 
 }
