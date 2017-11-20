@@ -383,7 +383,10 @@ class PgCursor:CursorBase{
 
     }
     proc __quote_columns(colname:string):string{
-        
+        if(colname=="*"){
+            return "*";
+        }
+
         return "\""+colname+"\"";
     }
     proc __quote_values(value:string):string{
@@ -453,7 +456,7 @@ class PgQueryBuilder: QueryBuilderBase{
    var sql:string="";
    var conn:PgConnection;
    var cursor:Cursor;
-
+   //var table:string;
 
    var _orderby_declared:bool=false;
    var _operation_type:string;
@@ -461,11 +464,12 @@ class PgQueryBuilder: QueryBuilderBase{
    proc PgQueryBuilder(con:PgConnection, table:string){
        this.conn = con;       
        this.From(table);
+       this.table=table;
        this.cursor = con.cursor();
    }
 
    iter Get():Row{
-    this.cursor.query(this.toSql());
+    this.cursor.query(this.compileSql());
 
         var res:Row = this.cursor.fetchone();
         while(res!=nil){
@@ -486,34 +490,88 @@ class PgQueryBuilder: QueryBuilderBase{
     return data;
    }*/
 
-   proc toSql():string{
+    proc toSql():string{
+        return this.sql;
+    }
+   proc compileSql():string{
        if(this._has("select")){
            this._operation_type="select";
            this._compileSelect();
+           //return this.sql;
+
        }else if(this._has("insert")){
            this._operation_type="insert";
            this._compileInsert();
+           //return this.sql;
        }else if(this._has("update")){
            this._operation_type="update";
            this._compileUpdate();
+           //return this.sql;
        }else if(this._has("delete")){
            this._operation_type="delete";
            this._compileDelete();
-       }else{
+          /// return this.sql;
+       }/*else if(this._has("where")){
+           this._operation_type="where";
+           this._compileWhere();
+           return this.sql;
+       }*/
+       else{
        }
        return this.sql;
    }
 
-    proc Count(){
+   proc clear(){
+        this.sql="";
+        this._statements_dim.clear();
+        this.From(this.table); 
+   }
+
+    proc Count():int{
+        
+        
+        
         var col = "COUNT(*) AS count_all";
-        return this.Select([col]);
+        this.Select([col]);
+        this.cursor.query(this.compileSql());
+        var row = this.cursor.fetchone();
+        return row["count_all"]:int; 
+        
     }
 
     proc Count(colname:string){
         var col = "COUNT("+this.__quote_columns(colname)+") AS count_"+colname;
-        return this.Select([col]);
+        this.Select([col]);
+        this.cursor.query(this.compileSql());
+        var row = this.cursor.fetchone();
+        return row["count_"+colname]:int;
     }
 
+    proc Max(colname:string):real{ 
+        var prefix="max_";
+        var col = "MAX("+this.__quote_columns(colname)+") AS "+prefix+colname;
+        this.Select([col]);
+        this.cursor.query(this.compileSql());
+        var row = this.cursor.fetchone();
+        return row[prefix+colname]:real;
+    }
+
+    proc Min(colname:string):real{ 
+        var prefix="min_";
+        var col = "MIN("+this.__quote_columns(colname)+") AS "+prefix+colname;
+        this.Select([col]);
+        this.cursor.query(this.compileSql());
+        var row = this.cursor.fetchone();
+        return row[prefix+colname]:real;
+    }
+    proc Avg(colname:string):real{ 
+        var prefix="avg_";
+        var col = "AVG("+this.__quote_columns(colname)+") AS "+prefix+colname;
+        this.Select([col]);
+        this.cursor.query(this.compileSql());
+        var row = this.cursor.fetchone();
+        return row[prefix+colname]:real;
+    }
 
    proc __arrayToString(arr, delimiter:string=", "):string{
         
@@ -521,6 +579,9 @@ class PgQueryBuilder: QueryBuilderBase{
     }
 
     proc __quote_columns(colname:string):string{
+        if(colname=="*"){
+            return "*";
+        }
         return "\""+colname+"\"";
     }
     proc __quote_values(value:string):string{
@@ -621,7 +682,7 @@ class PgQueryBuilder: QueryBuilderBase{
                         }else{
                             
                         }
-                        this.sql += " %s (\"%s\" %s %s) ".format(op[4], op[1], op[2], op[3]);
+                        this.sql += " %s (\"%s\" %s %s) ".format(op[4], op[1], op[2], this.__quote_values(op[3]));
                     }
                     i += 1;
                 }

@@ -22,10 +22,43 @@ module Main{
           .Offset(3)
           .Count("id");          
 */
-          for row in query.Select(["id","name"]).Where("name","like","%Carlos%").WhereBetween("id","4","6").Get(){
+          for row in query.Select(["id","name"]).Where("name","like","%Carlos%").Get(){
             writeln(row["id"]," ",row["name"]);
           }
-            writeln(query.toSql());
+          query.clear();
+          
+          var x =  query.Where("name","like","%Carlos%").Count(); 
+          writeln("count =",x);
+          writeln(query.toSql());
+
+          query.clear();
+          
+           x =  query.Where("name","like","%Carlos%").Count("id"); 
+          writeln("count =",x);
+          writeln(query.toSql());
+
+           query.clear();
+          
+          var y =  query.Where("name","like","%Carlos%").Max("id"); 
+          writeln("Max =",y);
+          writeln(query.toSql());
+          query.clear();
+
+          y =  query.Where("name","like","%Carlos%").Min("id"); 
+          writeln("Min =",y);
+          writeln(query.toSql());
+
+          query.clear();
+
+          y =  query.Where("name","like","%Carlos%").Avg("id"); 
+          writeln("Min =",y);
+          writeln(query.toSql());
+
+          query.clear();
+
+          //var count:int = q.Count();
+          //writeln("Count  = ",count);
+            //writeln(query.toSql());
             con.close();  
             writeln("end");
     }

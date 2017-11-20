@@ -837,16 +837,30 @@ class QueryBuilderBase{
         return "";
     }
 
-    proc Count(){ 
-         return this;
+    proc Count():int{ 
+         return 0;
+    }
+    proc Count(colname:string):int{ 
+         return 0;
+    }
+    proc Max(colname:string):real{ 
+         return 0;
+    }
+    proc Min(colname:string):real{ 
+         return 0;
     }
 
-    proc Count(colname:string){ 
-         return this;
+    proc Avg(colname:string):real{ 
+         return 0;
     }
 
     iter Get():Row{
         
+    }
+
+    proc clear(){
+        this.sql="";
+        this._statements_dim.clear();
     }
     
 
