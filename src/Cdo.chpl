@@ -781,7 +781,7 @@ class QueryBuilderBase{
         return this.Join(table, column1, "=", column2, "RIGHT", "AND");
     }
     proc Insert(data:[?D]string){
-        
+        return this;
     }
 
     proc Delete(){
