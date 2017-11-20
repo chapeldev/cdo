@@ -50,15 +50,17 @@ module Main{
 
           query.clear();
 
-          y =  query.Where("name","like","%Carlos%").Avg("id"); 
-          writeln("Min =",y);
+          y =  query.Where("contacts.name","like","%Carlos%").Avg("contacts.id"); 
+          writeln("Avg =",y);
           writeln(query.toSql());
 
           query.clear();
 
-          //var count:int = q.Count();
-          //writeln("Count  = ",count);
-            //writeln(query.toSql());
+          writeln("Join count = ",query.Join("company","company.id","contacts.company_id")
+          .rightJoin("company AS C2","c2.id","contacts.company_id").Count());
+
+            
+            writeln(query.toSql());
             con.close();  
             writeln("end");
     }

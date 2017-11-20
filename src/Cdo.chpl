@@ -518,7 +518,7 @@ pragma "no doc"
 
 }
 
-type whereType = 4*string;
+type whereType = 6*string;
 
 class StatementData{
     var op:string;
@@ -603,23 +603,6 @@ class StatementData{
     }
 }
 
-class StatementCompiler{
-    var _statements_dim:domain(string);
-    var _statements:[_statements_dim]StatementData;
-
-    proc init(stmt:[?D]StatementData){
-       this._statements = stmt;
-       this._statements_dim = D;
-    }
-
-    proc has(opname:string):bool{
-        return this._statements_dim.member(opname);
-    }
-
-    proc get(opname):StatementData{
-        return this._statements[opname];
-    }
-}
 
 
 
@@ -672,6 +655,7 @@ class QueryBuilderBase{
         return this;
     }
 
+
     proc From(table){
         if(this._statements_dim.member("from")){
             var stdata = this._statements["from"];
@@ -688,7 +672,7 @@ class QueryBuilderBase{
 
     proc Where(column:string, op:string, value, concat_op="AND"){
 
-        var ops:whereType = (column ,op, value,concat_op);
+        var ops:whereType = (column ,op, value,concat_op,"","");
        
         if(this._statements_dim.member("where")){
             var stdata = this._statements["where"];
@@ -746,12 +730,59 @@ class QueryBuilderBase{
         return this.WhereNotBetween(column,low_bound, upper_bound,"OR");
     }
 
-    
+    proc Join(table:string, column1:string, op:string, column2:string, join_type:string="INNER" ,concat_op="AND"){
+        
+        var ops:whereType = (table, column1 , op, column2, join_type,concat_op);
+       
+        if(this._statements_dim.member("join")){
+            var stdata = this._statements["join"];
+            stdata.append(ops);
+        }else{
+            this._statements["join"] = new StatementData("join",ops);
+        }
 
+        return this;
+    }
+
+    proc Join(table:string, column1:string,op:string, column2:string){
+        return this.Join(table, column1, op, column2, "INNER", "AND");
+    }
+
+    proc Join(table:string, column1:string, column2:string){
+        return this.Join(table, column1, "=", column2, "INNER", "AND");
+    }
+
+    proc innerJoin(table:string, column1:string, op:string, column2:string){
+        return this.Join(table, column1, op, column2, "INNER", "AND");
+    }
+
+    proc innerJoin(table:string, column1:string, column2:string){
+        return this.Join(table, column1, "=", column2, "INNER", "AND");
+    }
+
+    proc leftJoin(table:string, column1:string,op:string, column2:string){
+        return this.Join(table, column1, op, column2, "LEFT", "AND");
+    }
+
+    proc leftJoin(table:string, column1:string, column2:string){
+        return this.Join(table, column1, "=", column2, "LEFT", "AND");
+    }
+
+    proc rightJoin(table:string, column1:string,op:string, column2:string){
+        return this.Join(table, column1, op, column2, "RIGHT", "AND");
+    }
+    proc rightJoin(table:string, column1:string, column2:string){
+        return this.Join(table, column1, "=", column2, "RIGHT", "AND");
+    }
+    proc fullJoin(table:string, column1:string,op:string, column2:string){
+        return this.Join(table, column1, op, column2, "RIGHT", "AND");
+    }
+    proc fullJoin(table:string, column1:string, column2:string){
+        return this.Join(table, column1, "=", column2, "RIGHT", "AND");
+    }
     proc Delete(){
 
     }
-
     proc OrderBy(column){
         if(this._statements_dim.member("orderByAsc")){
             var stdata = this._statements["orderByAsc"];
@@ -761,8 +792,6 @@ class QueryBuilderBase{
         }
         return this;
     }
-
-    
     proc OrderBy(columns:[?D]string){
         if(this._statements_dim.member("orderByAsc")){
             var stdata = this._statements["orderByAsc"];
@@ -772,7 +801,6 @@ class QueryBuilderBase{
         }
         return this;
     }
-
 
     proc OrderByDesc(column){
         if(this._statements_dim.member("orderByDesc")){
