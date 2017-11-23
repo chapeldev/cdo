@@ -81,11 +81,27 @@ class ModelEngine{
         return obj;
     }
 
-    proc All(type eltType){
+    iter All(type eltType){
+
+       var obj = new eltType;
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));
+       
+       var qb = obj.getQueryBuilder().Select()
+        .From(obj.getTable()).Query();
+
+        obj = qb.getOneAsRecord(obj);
+        while(obj!=nil){
+            yield obj;
+            obj = new eltType;
+            obj.setConnection(this.getConnection());
+            obj.setQueryBuilder(this.getConnection().table(obj.getTable()));
+            obj = qb.getOneAsRecord(obj);
+            
+        }
 
         
-
-
+        
     }
 
     proc __cdo_getFieldName(ref obj:?eltType, fieldname:string){

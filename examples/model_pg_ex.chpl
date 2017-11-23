@@ -5,17 +5,6 @@ module Main{
     proc main(){
         var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
 
-        class MyModel{
-           type selfType;
-           proc print(){
-               writeln("print model");
-           }
-           proc New(){
-               var obj = new this.selfType;
-                obj.model = this; 
-               return obj;
-           }
-        }
 
         class Company:Model{
             var id:int;
@@ -44,12 +33,24 @@ module Main{
            writeln("* id = ",c.id, " name = ", c.name);    
         }
 
-        var campony = con.model().Find(Company, 1);
-        
-        if(campony!=nil){
-            writeln("# id = ",campony.id, " name = ", campony.name);
+        for contact in con.model().All(ContactsCampony){
+
+            writeln("@ id = ",contact.id, " name = ", contact.name);
+
         }
 
+
+        var company = con.model().Find(Company, 1);
+        
+        if(company!=nil){
+            writeln("# id = ",company.id, " name = ", company.name);
+        }
+
+        for comp in con.model().All(Company){
+
+            writeln("@ id = ",comp.id, " name = ", comp.name);
+
+        }
 
         con.close();
         writeln("End");
