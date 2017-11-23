@@ -8,6 +8,8 @@ insert_pg_ex:
 delete_pg_ex:
 	chpl -o ./bin/delete_pg_ex ./examples/delete_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 
+model_pg_ex:
+	chpl -o ./bin/model_pg_ex ./examples/model_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 
 update_pg_ex:
 	chpl -o ./bin/update_pg_ex ./examples/update_pg_ex.chpl  -M ./src -I/usr/include/postgresql/

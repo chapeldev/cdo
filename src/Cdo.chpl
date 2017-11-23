@@ -39,20 +39,239 @@ This module is focused on providing interfaces, base classes, and helpers that a
 module Cdo{
 
 use Reflection;
+use Regexp;
 
-
+use CDOutils;
 
 pragma "no doc"
-class Model{
-    var _table:string;
-    var _primary_key="id";
-    var dbCon:Connection;
-    proc Model(dbCon:Connection){
-    
+
+
+class ModelEngine{
+
+    var __cdo_con:Connection;
+
+
+    proc ModelEngine(con:Connection){
+        this.__cdo_con = con;
     }
+
+    proc setConnection(con:Connection){
+        this.__cdo_con =con;
+    }
+
+    proc getConnection():Connection{
+        return this.__cdo_con;
+    }
+
+
+    proc Find(type eltType,id:int):eltType{
+        return this.Find(eltType,id:string);
+    }
+    proc Find(type eltType,id:string):eltType{
+       var obj = new eltType;
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));
+     
+       obj = obj.getQueryBuilder().Select()
+        .From(obj.getTable())
+        .Where(obj.getPK(),id:string).Limit(1)
+        .Query()
+        .getOneAsRecord(obj);
+
+        return obj;
+    }
+
+    proc All(type eltType){
+
+        
+
+
+    }
+
+    proc __cdo_getFieldName(ref obj:?eltType, fieldname:string){
+        for param i in 1..numFields(eltType) {
+            var fname = getFieldName(eltType,i);
+            if(fieldname == fname){
+                return getFieldRef(obj, i); 
+            }
+        }
+        return nil;
+    }
+
+    proc __cdo_MapDataToModelObject(row:Row, ref obj:?eltType):bool{
+    
+    // Todo
+        return false;
+/*
+        if(row == nil){
+            return false;
+        }
+        
+        if(obj == nil){
+            return false;
+        }
+        
+
+        for param i in 1..numFields(eltType) {
+            var fname = getFieldName(eltType,i);
+            if(row.hasColumn(fname)){
+              if(getFieldRef(obj, i).type == string){
+                type ftype = getFieldRef(obj, i).type;
+                var s=row[fname];
+                getFieldRef(obj, i)=s:ftype;
+              }
+             
+            }else if(isClass(obj)&&(obj.__cdo_hasRelationMap(fname))){
+                
+                type ftype = getFieldRef(obj, i).type;
+                
+                var s = row[fname];
+                var mri = obj.__cdo_getRelationMap(fname);
+                
+                if(mri.relType == "belogsTo"){
+
+                    ref relObj = getFieldRef(obj, i);
+        
+                    relObj.setConnection(this.getConnection());
+                    getFieldRef(obj, i).setQueryBuilder(this.getConnection().table(getFieldRef(obj, i).getTable()));
+                    var relObjQB = getFieldRef(obj, i).getQueryBuilder();
+                    var row = relObjQB.Select().Where(getFieldRef(obj, i).getPK(), this.__cdo_getFieldName(obj,mri.localKey))
+                    .Get();
+                    if(row != nil){
+                       return  this.__cdo_MapDataToModelObject(row,getFieldRef(obj, i));
+                    }
+                }
+            }
+            return true;
+            */
+        
+    }
+
+}
+
+class ModelRelationInfo{
+    
+var relType:string;
+var localKey:string;
+var remoteKey:string;
+var remoteTable:string;
+var pivotTable:string;
+
+proc __CDO_ModelRelationInfo(relType:string){
+        this.relType = relType;
 }
 
 
+};
+
+class Model{
+    
+    var __cdo_table:string;
+    var __cdo_pk:string;
+    var __cdo_configDom:domain(string);
+    var __cdo_cofig:[__cdo_configDom]string;
+    var __cdo_con:Connection;
+    var __cdo_qb:QueryBuilder;
+
+    var __cdo_rel_mappingDom:domain(string);
+    var __cdo_rel_mapping:[__cdo_rel_mappingDom]ModelRelationInfo;
+
+    proc __cdo_mapRelation(relationType:string, 
+    fieldName:string,
+    localKey:string,
+    remoteKey:string="id",
+    pivotTable:string=""
+    ){
+        if(this.__cdo_rel_mappingDom.member(fieldName)){
+
+            this.__cdo_rel_mapping[fieldName].localKey = localKey;
+            this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
+            this.__cdo_rel_mapping[fieldName].relType = relationType;
+            this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
+
+        }else{
+
+            this.__cdo_rel_mapping[fieldName] = new __CDO_ModelRelationInfo(relationType);
+            this.__cdo_rel_mapping[fieldName].localKey = localKey;
+            this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
+            this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
+
+        }
+    }
+
+    proc __cdo_hasRelationMap(fieldname:string):bool{
+        return this.__cdo_rel_mappingDom.member(fieldname);
+    }
+    proc __cdo_getRelationMap(fieldName):ModelRelationInfo{
+        return this.__cdo_rel_mapping[fieldName];
+    }
+
+    proc mapBelongsTo(fieldName:string, localKey:string,remoteKey:string="id"){
+        this.__cdo_mapRelation("belongsTo",fieldName,localKey,remoteKey);
+    }
+
+    proc setTable(table:string){
+        this.__cdo_table = table;
+    }
+    proc getTable():string{
+        return this.__cdo_table;
+    }
+
+    proc setConnection(con:Connection){
+        this.__cdo_con =con;
+    }
+    proc getConnection():Connection{
+        return this.__cdo_con;
+    }
+    proc setQueryBuilder(qb:QueryBuilder){
+        this.__cdo_qb = qb;
+    }
+    proc getQueryBuilder():QueryBuilder{
+        return this.__cdo_qb;
+    }
+    proc setPK(pkname:string){
+        this.__cdo_pk = pkname;
+    }
+    proc getPK():string{
+        return this.__cdo_pk;
+    }
+    
+    /*proc Config(key:string){
+        if(__cdo_configDom.member(key)){
+            return this.__cdo_cofig[key];
+        }
+        return "";
+    }
+    proc Config(key:string, value:string){
+        this.__cdo_cofig[key]=value;
+    }
+*/
+
+    proc setup(self:?eltType){
+        
+        var tablename:string = cdoTitleToSneak(eltType:string);
+
+        if(this.getTable().length == 0){
+            this.setTable(tablename);
+        }
+        if(this.getPK().length == 0){
+            this.setPK("id");
+        }
+
+
+
+    }
+
+    proc belongsTo(obj:?eltType, local_key:string, foreign_key:string){
+
+    }
+
+    proc printType(){
+        writeln(this.type:string);
+    }
+    
+    
+}
 
 pragma "no doc"
 enum CdoType{
@@ -81,6 +300,11 @@ class Row{
     var data:[rowColDomain]string;
     pragma "no doc"
     var num:int(32);
+
+
+    proc hasColumn(colname:string):bool{
+        return this.rowColDomain.member(colname);
+    }
 /*
 `addData` adds in an associative array the column and its correspondent data.
         :arg colname: `string` name of the column.
@@ -229,6 +453,11 @@ pragma "no doc"
     proc table(table:string):QueryBuilder{
         return nil;
     } 
+    
+    
+    proc model():ModelEngine{
+        return nil;
+    }
 
     
 
@@ -399,13 +628,46 @@ pragma "no doc"
         for param i in 1..numFields(eltType) {
             var fname = getFieldName(eltType,i);
             if(hasColumn(fname)){
-             var s=row[fname];
-              getFieldRef(el, i)=s;// =  row[fname];
+              //if(getFieldRef(el, i).type == string){
+                type ftype = getFieldRef(el, i).type;
+                var s=row[fname];
+                getFieldRef(el, i)=s:ftype;
+              //}
+             // =  row[fname];
             }
         }
 
         return el;
     }
+
+    proc fetchAsObj(ref el:?eltType):eltType{
+        //var el2: eltType = new eltType;
+        var row:Row = this.fetchone();
+        if(row==nil){
+            return nil;
+        }
+        for param i in 1..numFields(eltType) {
+            var fname = getFieldName(eltType,i);
+            if(hasColumn(fname)){
+              if(getFieldRef(el, i).type == string){
+                
+                type ftype = getFieldRef(el, i).type;
+                var s=row[fname];
+                getFieldRef(el, i)=s:ftype;
+              
+              }else if(isClass(getFieldRef(el, i))){
+                  //type ftype = getFieldRef(el, i).type;
+              }
+            }
+        }
+
+        return el;
+    }
+
+
+
+
+
 
     pragma "no doc"
     
@@ -901,9 +1163,20 @@ class QueryBuilderBase{
     iter Get():Row{
         
     }
+    proc getOneAsRecord(ref obj:?eltType):eltType{
+       return nil;
+    }
+    
+   proc Query(){
+    return this;
+   }
+
     proc Exec(){
         
     }
+    proc QueryAndGetCursor():Cursor{
+       return nil;
+   }
 
 
     proc clear(){
@@ -960,6 +1233,45 @@ class QueryBuilder{
         this.query_driver.writeThis(f);
     }*/
 }
+
+
+module CDOutils{
+
+    proc cdoTitleToSneak(str:string):string{
+       
+        try{
+            var myRegexp = compile("([A-Z])");
+            var tb:string;
+            var i:int=0;
+            var prfx:string="";
+            for s in str.split(myRegexp){
+                if((s.length!=0)&&(s.isUpper())){
+               // var ss:string;
+                    if(i>0){
+                        prfx="_";
+                    }
+                    tb += (prfx+s.toLower());
+                    i+=1;
+                }else if(s.length!=0){
+                    tb += s.toLower();
+                    i+=1;
+            }
+            //writeln("* ",s, " id upper ", s.isUpper():string, "len = ", s.length);
+        }
+        
+        return tb;
+
+        }catch{
+            writeln("Cannot convert String to Sneak case:  ",str:string);
+            
+        }
+
+        return str;
+    }
+
+
+}
+
 
 
 }//end module

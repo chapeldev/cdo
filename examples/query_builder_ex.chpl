@@ -42,18 +42,22 @@ module Main{
           var y =  query.Where("name","like","%Carlos%").Max("id"); 
           writeln("Max =",y);
           writeln(query.toSql());
+          
           query.clear();
           y =  query.Where("name","like","%Carlos%").Min("id"); 
           writeln("Min =",y);
           writeln(query.toSql());
+          
           query.clear();
           y =  query.Where("contacts.name","like","%Carlos%").Avg("contacts.id"); 
           writeln("Avg =",y);
           writeln(query.toSql());
+          
           query.clear();
           writeln("Join count = ",query.Join("company","company.id","contacts.company_id")
           .rightJoin("company AS C2","c2.id","contacts.company_id").Count());
           writeln(query.toSql());
+          
           query.clear();
           query.Delete("id","24").Exec();
 
@@ -63,13 +67,14 @@ module Main{
           kv["email"]="patrick@email.co";
           query.Insert(kv).Exec();
           writeln(query.toSql());
+          
           query.clear();
+
           for row in query.Select(["id","name"]).Get(){
             writeln(row["id"]," ",row["name"]," ",row["email"]);
           }
           
-          query.clear();
-          
+          query.clear(); 
           con.close();
           writeln("end");
     }

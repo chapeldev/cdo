@@ -19,6 +19,7 @@ module Postgres{
     use Cdo;
     use PostgresNative;
     use IO.FormattedIO;
+    use Types;
 
     require "libpq-fe.h","-lpq";
     require "stdio.h";
@@ -112,6 +113,10 @@ class PgConnection:ConnectionBase{
         return new QueryBuilder(new PgQueryBuilder(this,table));
     }
 
+    proc model():ModelEngine{
+        var engine = new ModelEngine(new Connection(this));
+        return engine;
+    }
 
     proc __registerTypes(){
        /** this.__registerTypeName(20, parseBigInteger); // int8
@@ -478,6 +483,25 @@ class PgQueryBuilder: QueryBuilderBase{
         }
 
     //yield this.cursor.fetchone();     
+   }
+
+   proc getOneAsRecord(ref obj:?eltType):eltType{
+       //writeln(this.compileSql());
+        //this.cursor.query(this.compileSql());
+        if(this.cursor.fetchAsRecord(obj) != nil){
+            return obj;
+        }
+        return nil;
+   }
+
+   proc Query(){
+        
+        this.cursor.query(this.compileSql());
+       return this;
+   }
+
+   proc QueryAndGetCursor():Cursor{
+       return this.cursor;
    }
 
    proc Exec(){
