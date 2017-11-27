@@ -119,6 +119,75 @@ class ModelEngine{
        qb.Delete(obj.getPK(),this.__cdo_getFieldName(obj,obj.getPK()));
     }
 
+    proc BelongsTo(ref obj:?eltType, type refType, local_key:string, foreign_key:string=""): refType{
+       var robj = new refType();
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       robj.setConnection(this.getConnection());
+       robj.setQueryBuilder(this.getConnection().table(robj.getTable())); 
+       var fk = foreign_key; 
+       var qb = robj.getQueryBuilder();
+
+       writeln("Table =",robj.getTable());
+       
+       if(foreign_key == ""){
+           fk = robj.getPK();
+           
+           var fval:string = this.__cdo_getFieldName(obj,local_key):string;
+           writeln("fval =", fval);
+           if((fval=="")){
+               return nil;
+           }
+           writeln("FK =",fk);
+        //var sqlstr = qb.Select().Where(fk,fval).Query().toSql();
+          // writeln("SQL1 =" , sqlstr);
+          qb.Select().Where(fk,fval).Query().getOneAsRecord(robj);
+           return robj;
+       }      
+       //var sqlstr = qb.Select().Where(foreign_key,this.__cdo_getFieldName(robj,local_key))
+       // .Query().toSql();
+        
+        //writeln("SQL2 =" , sqlstr);
+       
+        qb.Select().Where(foreign_key,this.__cdo_getFieldName(robj,local_key))
+        .Query().getOneAsRecord(robj);
+       
+        return robj;
+        //qb.Select().Where(local_key,this.__cdo_getFieldName(obj,local_key)).;
+    }
+
+    iter HasMany(ref obj:?eltType, type refType, foreign_key:string, local_key:string=""): refType{
+       var robj = new refType();
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       robj.setConnection(this.getConnection());
+       robj.setQueryBuilder(this.getConnection().table(robj.getTable())); 
+       var fk = foreign_key; 
+       var lk = local_key;
+       var qb = robj.getQueryBuilder();
+        
+       if(local_key ==""){
+        lk = obj.getPK();
+        
+       }
+
+       var qr =  qb.Select().Where(foreign_key,this.__cdo_getFieldName(obj,lk)).Query();
+        robj = qr.getOneAsRecord(robj);
+        while(robj!=nil){
+            yield robj;
+            robj = new refType();
+            robj.setConnection(this.getConnection());
+            robj.setQueryBuilder(this.getConnection().table(robj.getTable()));
+            robj = qb.getOneAsRecord(robj);    
+        }
+       //qb.Select().Where(foreign_key,this.__cdo_getFieldName(obj,lk));
+    }
+
+
+
+
+
+
     proc __cdo_getFieldName(ref obj:?eltType, fieldname:string):string{
         for param i in 1..numFields(eltType) {
             var fname = getFieldName(eltType,i);
@@ -662,7 +731,12 @@ pragma "no doc"
               //if(getFieldRef(el, i).type == string){
                 type ftype = getFieldRef(el, i).type;
                 var s=row[fname];
-                getFieldRef(el, i)=s:ftype;
+                 if(isNumericType(ftype)&&(s=="")){
+                     getFieldRef(el, i)= 0:ftype;
+                 }else{
+                     getFieldRef(el, i)=s:ftype;
+                 }
+                
               //}
              // =  row[fname];
             }
@@ -1102,6 +1176,15 @@ class QueryBuilderBase{
     proc Delete(column:string,value:string){
         this.Delete().Where(column,value).Exec();
     }
+   /* proc BelongsTo(data:[?D]string, table:string, local_key:string, foreign_key:string = "id"){
+        return nil;
+    }
+    proc BelongsTo(obj:?altType, table:string, local_key:string, foreign_key:string = "id"){
+        return nil;
+    }*/
+
+
+
 
     proc OrderBy(column){
         if(this._statements_dim.member("orderByAsc")){

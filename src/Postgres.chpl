@@ -486,7 +486,7 @@ class PgQueryBuilder: QueryBuilderBase{
    }
 
    proc getOneAsRecord(ref obj:?eltType):eltType{
-       //writeln(this.compileSql());
+       //writeln(this.toSql());
         //this.cursor.query(this.compileSql());
         if(this.cursor.fetchAsRecord(obj) != nil){
             return obj;
@@ -495,7 +495,6 @@ class PgQueryBuilder: QueryBuilderBase{
    }
 
    proc Query(){
-        
         this.cursor.query(this.compileSql());
        return this;
    }
@@ -600,7 +599,6 @@ class PgQueryBuilder: QueryBuilderBase{
     }
 
     proc Insert(data:[?D]string, exclude_column:string="id"){
-
         if(D.member(exclude_column)){
             D.remove(exclude_column);
         }
@@ -623,6 +621,17 @@ class PgQueryBuilder: QueryBuilderBase{
     proc Update(ref data:?eltType, cond_column:string, id:string){
         return this.Update(cdoObjToArray(data),cond_column,id);
     }
+
+    /*proc BelongsTo(data:[?D]string, table:string, local_key:string, foreign_key:string = "id"){
+        var qb = this.conn.table(table);
+        return qb.Select().Where(foreign_key, data[local_key]); 
+    }
+    proc BelongsTo(obj:?eltType, table:string, local_key:string, foreign_key:string = "id"){
+        var qb = this.conn.table(table);
+        var data = cdoObjToArray(obj);
+        return qb.Select().Where(foreign_key, data[local_key]); 
+    }*/
+
    proc __arrayToString(arr, delimiter:string=", "):string{
         return delimiter.join(arr);
     }
