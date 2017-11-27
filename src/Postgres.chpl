@@ -34,7 +34,8 @@ class PgConnection:ConnectionBase{
 
      var dsn:string;
      var conn:c_ptr(PGconn);
-     //var typeMapper:TypeMapper; 
+    // var mapperDom:domain(string); //When I declare this the compiler says that there is an error
+    // var type_mapper:[mapperDom]string; 
     
      proc PgConnection(host:string, user:string="", database:string="", passwd:string=""){
         try{

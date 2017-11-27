@@ -450,7 +450,7 @@ class Row{
 
 
     pragma "no doc"
-    var rowColDomain:domain(string);
+    var rowColDomain:domain(string); // the compiler says that this type not found.
     pragma "no doc"
     var data:[rowColDomain]string;
     pragma "no doc"
