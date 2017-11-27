@@ -55,7 +55,7 @@ class PgConnection:ConnectionBase{
      }
 
     proc getNativeConection(): c_ptr(PGconn){
-        return this.conn;    
+        return this.conn;   
     }
 
     proc helloWorld(){
@@ -599,11 +599,30 @@ class PgQueryBuilder: QueryBuilderBase{
         return row[prefix+alias_colname]:real;
     }
 
-    proc Insert(data:[?D]string){
+    proc Insert(data:[?D]string, exclude_column:string="id"){
+
+        if(D.member(exclude_column)){
+            D.remove(exclude_column);
+        }
         this.cursor.insert(this.table,data);
         return this;
     }
+    proc Insert(ref data:?eltType, exclude_column:string="id"){
+        //this.cursor.insert(this.table,cdoObjToArray(data));
+        return this.Insert(cdoObjToArray(data),exclude_column);
+    }
+    
+    proc Update( data:[?D]string, cond_column:string, id:string){
+        var col = this.__quote_columns(cond_column);
+        var val = this.__quote_values(id);
+        this.cursor.update(this.table, col+" = "+val, data);
 
+        return this;
+    }
+
+    proc Update(ref data:?eltType, cond_column:string, id:string){
+        return this.Update(cdoObjToArray(data),cond_column,id);
+    }
    proc __arrayToString(arr, delimiter:string=", "):string{
         return delimiter.join(arr);
     }

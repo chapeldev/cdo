@@ -99,19 +99,34 @@ class ModelEngine{
             obj = qb.getOneAsRecord(obj);
             
         }
-
-        
-        
+    }
+    proc Insert(ref obj:?eltType){
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       var qb = obj.getQueryBuilder();
+       qb.Insert(obj,obj.getPK());
+    }
+    proc Update(ref obj:?eltType){
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       var qb = obj.getQueryBuilder();
+       qb.Update(obj, obj.getPK(), this.__cdo_getFieldName(obj,obj.getPK()));
+    }
+    proc Delete(ref obj:?eltType){
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       var qb = obj.getQueryBuilder();
+       qb.Delete(obj.getPK(),this.__cdo_getFieldName(obj,obj.getPK()));
     }
 
-    proc __cdo_getFieldName(ref obj:?eltType, fieldname:string){
+    proc __cdo_getFieldName(ref obj:?eltType, fieldname:string):string{
         for param i in 1..numFields(eltType) {
             var fname = getFieldName(eltType,i);
             if(fieldname == fname){
-                return getFieldRef(obj, i); 
+                return getFieldRef(obj, i):string; 
             }
         }
-        return nil;
+        return "";
     }
 
     proc __cdo_MapDataToModelObject(row:Row, ref obj:?eltType):bool{
@@ -1058,7 +1073,18 @@ class QueryBuilderBase{
     proc fullJoin(table:string, column1:string, column2:string){
         return this.Join(table, column1, "=", column2, "RIGHT", "AND");
     }
-    proc Insert(data:[?D]string){
+    proc Insert(data:[?D]string, exclude_column:string="id"){
+        return this;
+    }
+    proc Insert(ref data:?eltType, exclude_column:string="id"){
+        return this;
+    }
+
+    proc Update( data:[?D]string, cond_column:string, id:string){
+        return this;
+    }
+
+    proc Update(ref data:?eltType, cond_column:string, id:string){
         return this;
     }
 
@@ -1074,7 +1100,7 @@ class QueryBuilderBase{
         return this;
     }
     proc Delete(column:string,value:string){
-        return this.Delete().Where(column,value);
+        this.Delete().Where(column,value).Exec();
     }
 
     proc OrderBy(column){
@@ -1283,7 +1309,24 @@ module CDOutils{
         }
 
         return str;
+    
     }
+
+    proc cdoObjToArray(ref el:?eltType){
+
+        var cols_dim:domain(string);
+        var cols:[cols_dim]string;
+
+        for param i in 1..numFields(eltType) {
+            var fname = getFieldName(eltType,i);
+            var value = getFieldRef(el, i);// =  row[fname];
+            cols[fname:string] = value:string;
+        }
+
+        return cols;
+    }
+
+
 
 
 }
