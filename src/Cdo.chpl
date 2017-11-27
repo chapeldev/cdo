@@ -80,6 +80,19 @@ class ModelEngine{
 
         return obj;
     }
+    proc Find(ref obj:?eltType):eltType{
+       //var obj = new eltType;
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));
+     
+       obj = obj.getQueryBuilder().Select()
+        .From(obj.getTable())
+        .Where(obj.getPK(),this.__cdo_getFieldName(obj,obj.getPK()):string).Limit(1)
+        .Query()
+        .getOneAsRecord(obj);
+
+        return obj;
+    }
 
     iter All(type eltType){
 
@@ -183,10 +196,50 @@ class ModelEngine{
        //qb.Select().Where(foreign_key,this.__cdo_getFieldName(obj,lk));
     }
 
+    proc HasOne(ref obj:?eltType, type refType, foreign_key:string, local_key:string=""): refType{
+       var robj = new refType();
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       robj.setConnection(this.getConnection());
+       robj.setQueryBuilder(this.getConnection().table(robj.getTable())); 
+       var fk = foreign_key; 
+       var lk = local_key;
+       var qb = robj.getQueryBuilder();
+        
+       if(local_key ==""){
+        lk = obj.getPK();
+       }
+       var qr =  qb.Select().Where(foreign_key,this.__cdo_getFieldName(obj,lk)).Limit(1).Query();
+        robj = qr.getOneAsRecord(robj);
+        return robj;
+    }
 
+    iter BelongsToMany(ref obj:?eltType, type refType, intermediate_table:string, local_key:string, foreign_key:string, remote_key :string= "id"){
+       var robj = new refType();
+       obj.setConnection(this.getConnection());
+       obj.setQueryBuilder(this.getConnection().table(obj.getTable()));       
+       robj.setConnection(this.getConnection());
+       robj.setQueryBuilder(this.getConnection().table(robj.getTable()));
+       var qb = robj.getQueryBuilder();
+       var rk = remote_key;
+     
+       var qr = qb.Select([robj.getTable()+".*"])
+      .Join(intermediate_table,robj.getTable()+"."+robj.getPK(),intermediate_table+"."+foreign_key)
+      .Join(obj.getTable(),obj.getTable()+"."+obj.getPK(),intermediate_table+"."+local_key)
+      .Where(obj.getTable()+"."+obj.getPK(),this.__cdo_getFieldName(obj,obj.getPK()))
+      .Query();
 
+      // writeln(qr.toSql());
 
-
+       robj = qr.getOneAsRecord(robj);
+        while(robj!=nil){
+            yield robj;
+            robj = new refType();
+            robj.setConnection(this.getConnection());
+            robj.setQueryBuilder(this.getConnection().table(robj.getTable()));
+            robj = qb.getOneAsRecord(robj);    
+        }
+    }
 
     proc __cdo_getFieldName(ref obj:?eltType, fieldname:string):string{
         for param i in 1..numFields(eltType) {

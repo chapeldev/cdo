@@ -13,6 +13,8 @@ model_pg_ex:
 
 model_pg_ex2:
 	chpl -o ./bin/model_pg_ex2 ./examples/model_pg_ex2.chpl  -M ./src -I/usr/include/postgresql/
+model_pg_ex3:
+	chpl -o ./bin/model_pg_ex3 ./examples/model_pg_ex3.chpl  -M ./src -I/usr/include/postgresql/
 
 update_pg_ex:
 	chpl -o ./bin/update_pg_ex ./examples/update_pg_ex.chpl  -M ./src -I/usr/include/postgresql/

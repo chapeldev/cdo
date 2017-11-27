@@ -77,10 +77,9 @@ module Main{
             for cont in con.model().HasMany(comp,ContactsCompany,"company_id"){
                begin writeln("Contact ", cont.name, " company id ",cont.company_id);
             }
-
-            //con.model().Delete(contact);
+            var cc = con.model().HasOne(comp,ContactsCompany,"company_id");
+            writeln("Has one ",cc.name);
         }
-
 
         con.close();
         writeln("End");
