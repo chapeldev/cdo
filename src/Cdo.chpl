@@ -447,14 +447,14 @@ The  `Row` class stores information from result set send by the database server.
 
 */
 class Row{
+
+
     pragma "no doc"
     var rowColDomain:domain(string);
     pragma "no doc"
     var data:[rowColDomain]string;
     pragma "no doc"
     var num:int(32);
-
-
     proc hasColumn(colname:string):bool{
         return this.rowColDomain.member(colname);
     }

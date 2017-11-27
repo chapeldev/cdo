@@ -46,7 +46,7 @@ module Main{
         
         if(cat!=nil){
          writeln("* category name = ", cat.name);
-         coforall c in  con.model().BelongsToMany(cat, ContactsCompany,"contacts_category","category_id","contact_id","id"){
+         coforall c in  con.model().BelongsToMany(cat, ContactsCompany,"contacts_category","category_id","contact_id"){
            writeln("* id = ",c.id, " name = ", c.name," email = ", c.email);    
          }
         }

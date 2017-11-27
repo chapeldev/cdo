@@ -34,7 +34,8 @@ class PgConnection:ConnectionBase{
 
      var dsn:string;
      var conn:c_ptr(PGconn);
-
+     //var typeMapper:TypeMapper; 
+    
      proc PgConnection(host:string, user:string="", database:string="", passwd:string=""){
         try{
             this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
@@ -47,7 +48,7 @@ class PgConnection:ConnectionBase{
                 PQfinish(conn);
                 halt("Error");
             }
-
+            this.__registerTypes();
         }catch{
                 writeln("Postgres Connection to database exception");
         }
@@ -119,54 +120,62 @@ class PgConnection:ConnectionBase{
     }
 
     proc __registerTypes(){
-       /** this.__registerTypeName(20, parseBigInteger); // int8
-        this.__registerTypeName(21, parseInteger); // int2
-        this.__registerTypeName(23, parseInteger); // int4
-        this.__registerTypeName(26, parseInteger); // oid
-        this.__registerTypeName(700, parseFloat); // float4/real
-        this.__registerTypeName(701, parseFloat); // float8/double
-        this.__registerTypeName(16, parseBool);
-        this.__registerTypeName(1082, parseDate); // date
-        this.__registerTypeName(1114, parseDate); // timestamp without timezone
-        this.__registerTypeName(1184, parseDate); // timestamp
-        this.__registerTypeName(600, parsePoint); // point
-        this.__registerTypeName(651, parseStringArray); // cidr[]
-        this.__registerTypeName(718, parseCircle); // circle
-        this.__registerTypeName(1000, parseBoolArray);
-        this.__registerTypeName(1001, parseByteAArray);
-        this.__registerTypeName(1005, parseIntegerArray); // _int2
-        this.__registerTypeName(1007, parseIntegerArray); // _int4
-        this.__registerTypeName(1028, parseIntegerArray); // oid[]
-        this.__registerTypeName(1016, parseBigIntegerArray); // _int8
-        this.__registerTypeName(1017, parsePointArray); // point[]
-        this.__registerTypeName(1021, parseFloatArray); // _float4
-        this.__registerTypeName(1022, parseFloatArray); // _float8
-        this.__registerTypeName(1231, parseFloatArray); // _numeric
-        this.__registerTypeName(1014, parseStringArray); //char
-        this.__registerTypeName(1015, parseStringArray); //varchar
-        this.__registerTypeName(1008, parseStringArray);
-        this.__registerTypeName(1009, parseStringArray);
-        this.__registerTypeName(1040, parseStringArray); // macaddr[]
-        this.__registerTypeName(1041, parseStringArray); // inet[]
-        this.__registerTypeName(1115, parseDateArray); // timestamp without time zone[]
-        this.__registerTypeName(1182, parseDateArray); // _date
-        this.__registerTypeName(1185, parseDateArray); // timestamp with time zone[]
-        this.__registerTypeName(1186, parseInterval);
-        this.__registerTypeName(17, parseByteA);
-        this.__registerTypeName(114, JSON.parse.bind(JSON)); // json
-        this.__registerTypeName(3802, JSON.parse.bind(JSON)); // jsonb
-        this.__registerTypeName(199, parseJsonArray); // json[]
-        this.__registerTypeName(3807, parseJsonArray); // jsonb[]
-        this.__registerTypeName(3907, parseStringArray); // numrange[]
-        this.__registerTypeName(2951, parseStringArray); // uuid[]
-        this.__registerTypeName(791, parseStringArray); // money[]
-        this.__registerTypeName(1183, parseStringArray); // time[]
-        this.__registerTypeName(1270, parseStringArray); // timetz[]
+       /* this.__registerTypeName(20, "int"); // int8
+        this.__registerTypeName(21, "int"); // int2
+        this.__registerTypeName(23, "int"); // int4
+        this.__registerTypeName(26, "int"); // oid
+        this.__registerTypeName(700, "real"); // float4/real
+        this.__registerTypeName(701, "real"); // float8/double
+        this.__registerTypeName(16, "bool");
+        this.__registerTypeName(1082, "date"); // date
+        this.__registerTypeName(1114, "date"); // timestamp without timezone
+        this.__registerTypeName(1184, "date"); // timestamp
+        this.__registerTypeName(600, "point"); // point
+        this.__registerTypeName(651, "string-array"); // cidr[]
+        this.__registerTypeName(718, "string"); // circle
+        this.__registerTypeName(1000, "bool-Array");
+        this.__registerTypeName(1001, "string-Array");
+        this.__registerTypeName(1005, "int-array"); // _int2
+        this.__registerTypeName(1007, "int-array"); // _int4
+        this.__registerTypeName(1028, "int-array"); // oid[]
+        this.__registerTypeName(1016, "integer-array"); // _int8
+        this.__registerTypeName(1017, "point-array"); // point[]
+        this.__registerTypeName(1021, "real-array"); // _float4
+        this.__registerTypeName(1022, "real-array"); // _float8
+        this.__registerTypeName(1231, "real-array"); // _numeric
+        this.__registerTypeName(1014, "string-array"); //char
+        this.__registerTypeName(1015, "string-array"); //varchar
+        this.__registerTypeName(1008, "string-array");
+        this.__registerTypeName(1009, "string-array");
+        this.__registerTypeName(1040, "string-array"); // macaddr[]
+        this.__registerTypeName(1041, "string-array"); // inet[]
+        this.__registerTypeName(1115, "date-array"); // timestamp without time zone[]
+        this.__registerTypeName(1182, "date-array"); // _date
+        this.__registerTypeName(1185, "date-array"); // timestamp with time zone[]
+        this.__registerTypeName(1186, "range");
+        this.__registerTypeName(17, "string");
+        this.__registerTypeName(114, "json"); // json
+        this.__registerTypeName(3802, "json"); // jsonb
+        this.__registerTypeName(199, "json-array"); // json[]
+        this.__registerTypeName(3807, "json-array"); // jsonb[]
+        this.__registerTypeName(3907, "string-array"); // numrange[]
+        this.__registerTypeName(2951, "string-array"); // uuid[]
+        this.__registerTypeName(791, "string-array"); // money[]
+        this.__registerTypeName(1183, "string-array"); // time[]
+        this.__registerTypeName(1270, "string-array"); // timetz[]
         */
-  
+
     }
+
+   /* proc __registerTypeName(oid:int, cdo_type:string){
+        //this.__type_mapper[oid:string]= cdo_type;
+    }
+    proc __typeToString(oid:Oid):string{
+        //return this.__type_mapper[oid:string];
+    }
+    */
     proc dumpt(){
-        writeln();
+       
         
     }
 
@@ -226,7 +235,8 @@ class PgCursor:CursorBase{
         var ii:int(32)=0;
         while ( ii < nFields){    
             var colname = new string(PQfname(this.res, ii:c_int));
-            this.__addColumn(ii,colname);
+            //this.con.__typeToString(PQftype(this.res,ii:c_int):int
+            this.__addColumn(ii,colname );
             ii+=1;
         }
         this.numRows =PQntuples(res):int(32);
@@ -887,9 +897,7 @@ extern record FILE{
 
 }
 
-extern record Oid{
-}
-
+extern type Oid = c_int;
 extern record pg_int64{
 }
 
