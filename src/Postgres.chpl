@@ -187,6 +187,10 @@ class PgCursor:CursorBase{
    var con:PgConnection;
    var pgcon:c_ptr(PGconn);
    var res:c_ptr(PGresult);
+
+   var mapperDom:domain(string); //When I declare this the compiler says that there is an error
+   var type_mapper:[mapperDom]string; 
+ 
    
    var nFields:int(32);
    var numRows:int(32);
@@ -195,7 +199,68 @@ class PgCursor:CursorBase{
    proc PgCursor(con:PgConnection, pgcon:c_ptr(PGconn)){
        this.con = con;
        this.pgcon=pgcon;
+       this.__registerTypes();
    }
+
+    proc __registerTypes(){
+        this.__registerTypeName(20, "int"); // int8
+        this.__registerTypeName(1043, "string"); // macaddr[]
+        this.__registerTypeName(21, "int"); // int2
+        this.__registerTypeName(23, "int"); // int4
+        this.__registerTypeName(26, "int"); // oid
+        this.__registerTypeName(700, "real"); // float4/real
+        this.__registerTypeName(701, "real"); // float8/double
+        this.__registerTypeName(16, "bool");
+        this.__registerTypeName(1082, "date"); // date
+        this.__registerTypeName(1114, "date"); // timestamp without timezone
+        this.__registerTypeName(1184, "date"); // timestamp
+        this.__registerTypeName(600, "point"); // point
+        this.__registerTypeName(651, "string-array"); // cidr[]
+        this.__registerTypeName(718, "string"); // circle
+        this.__registerTypeName(1000, "bool-Array");
+        this.__registerTypeName(1001, "string-Array");
+        this.__registerTypeName(1005, "int-array"); // _int2
+        this.__registerTypeName(1007, "int-array"); // _int4
+        this.__registerTypeName(1028, "int-array"); // oid[]
+        this.__registerTypeName(1016, "integer-array"); // _int8
+        this.__registerTypeName(1017, "point-array"); // point[]
+        this.__registerTypeName(1021, "real-array"); // _float4
+        this.__registerTypeName(1022, "real-array"); // _float8
+        this.__registerTypeName(1231, "real-array"); // _numeric
+        this.__registerTypeName(1014, "string-array"); //char
+        this.__registerTypeName(1015, "string-array"); //varchar
+        this.__registerTypeName(1008, "string-array");
+        this.__registerTypeName(1009, "string-array");
+        this.__registerTypeName(1040, "string-array"); // macaddr[]
+        this.__registerTypeName(1041, "string-array"); // inet[]
+        this.__registerTypeName(1115, "date-array"); // timestamp without time zone[]
+        this.__registerTypeName(1182, "date-array"); // _date
+        this.__registerTypeName(1185, "date-array"); // timestamp with time zone[]
+        this.__registerTypeName(1186, "range");
+        this.__registerTypeName(17, "string");
+        this.__registerTypeName(114, "json"); // json
+        this.__registerTypeName(3802, "json"); // jsonb
+        this.__registerTypeName(199, "json-array"); // json[]
+        this.__registerTypeName(3807, "json-array"); // jsonb[]
+        this.__registerTypeName(3907, "string-array"); // numrange[]
+        this.__registerTypeName(2951, "string-array"); // uuid[]
+        this.__registerTypeName(791, "string-array"); // money[]
+        this.__registerTypeName(1183, "string-array"); // time[]
+        this.__registerTypeName(1270, "string-array"); // timetz[]
+        
+
+    }
+
+    proc __registerTypeName(oid:int, cdo_type:string){
+        this.type_mapper[oid:string]= cdo_type;
+    }
+    proc __typeToString(oid:Oid):string{
+        if(this.mapperDom.member(oid:string)){
+            return this.type_mapper[oid:string];
+        }
+        return oid:string;        
+    }
+   
 
     proc rowcount():int(32){
         return this.numRows;
@@ -236,8 +301,9 @@ class PgCursor:CursorBase{
         var ii:int(32)=0;
         while ( ii < nFields){    
             var colname = new string(PQfname(this.res, ii:c_int));
+            var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
             //this.con.__typeToString(PQftype(this.res,ii:c_int):int
-            this.__addColumn(ii,colname );
+            this.__addColumn(ii,colname, coltype );
             ii+=1;
         }
         this.numRows =PQntuples(res):int(32);
@@ -262,8 +328,9 @@ class PgCursor:CursorBase{
         var ii:int(32)=0;
         while ( ii < nFields){    
             var colname = new string(PQfname(this.res, ii:c_int));
-            this.__addColumn(ii,colname);
-            ii+=1;
+            var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
+            this.__addColumn(ii,colname, coltype );
+            ii += 1;
         }
         this.numRows =PQntuples(res):int(32);
         this.curRow=0;
@@ -277,9 +344,6 @@ class PgCursor:CursorBase{
             writeln("Error");
         }
     }
-
-
-   
 
     proc dump(){
         var res = this.res;
@@ -327,7 +391,8 @@ class PgCursor:CursorBase{
         while(j < this.nFields){
                 var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
                 var colinfo = this.getColumnInfo(j);
-                row.addData(colinfo.name,datum);
+                //this.__addColumn(ii,colname, coltype );
+                row.addData(colinfo.name,datum,colinfo.coltype);
                 j += 1;
         }
         this.curRow += 1;
@@ -355,8 +420,7 @@ class PgCursor:CursorBase{
        while(j < this.nFields){
                 var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
                 var colinfo = this.getColumnInfo(j);
-                //writeln("Columns ",colinfo.name, " Datum ",datum);
-                row.addData(colinfo.name,datum);
+                 row.addData(colinfo.name,datum,colinfo.coltype);
                 j += 1;
         }
         this.curRow += 1;

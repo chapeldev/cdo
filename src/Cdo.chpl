@@ -443,8 +443,6 @@ enum CdoType{
 
 /*
 The  `Row` class stores information from result set send by the database server.
-
-
 */
 class Row{
 
@@ -453,6 +451,13 @@ class Row{
     var rowColDomain:domain(string); // the compiler says that this type not found.
     pragma "no doc"
     var data:[rowColDomain]string;
+
+    pragma "no doc"
+    var rowColTypeDomain:domain(string);
+    
+    pragma "no doc"
+    var dataType:[rowColTypeDomain]string;
+
     pragma "no doc"
     var num:int(32);
     proc hasColumn(colname:string):bool{
@@ -468,8 +473,9 @@ class Row{
        
 */
 
-    proc addData(colname:string, datum:string){
+    proc addData(colname:string, datum:string, dtype:string="string"){
         this.data[colname] = datum;
+        this.dataType[colname] = dtype;
     }
 /*
     `get` gets the data from column name.
@@ -481,13 +487,73 @@ class Row{
        
 */
     
-    proc get(colname:string):string{
+    proc get(colname:string){
+        
         if(this.rowColDomain.member(colname)){
+            
             return this.data[colname];
+        }else{
+            
+            return "";
+        }
+    }
+
+
+    proc getArray(colname:string,
+    array_header_trail:string="{}",
+    separator:string=",",
+    strip_comma:bool=true
+
+    ){
+        var D:domain(1);
+        var ret:[D]string;
+
+        if(this.rowColDomain.member(colname)){
+
+            var strtype = this.getType(colname);
+
+            var value = this.data[colname]; 
+
+            if(value.startsWith(array_header_trail[1]) && value.endsWith(array_header_trail[2]) && strtype.endsWith("array")){
+                
+                //var tmp_val = value.split("{");
+                //value = "".join(tmp_val);
+                //tmp_val = value.split("}");
+                //value = "".join(tmp_val);
+
+                var sz = value.length;
+                
+                var values = value[2..(value.length-1)];
+                
+                var rett = values.split(",");
+                for r in rett{
+                    if(r.startsWith("\"")&&r.endsWith("\"")&&strip_comma){
+                        r = r[2..(r.length-1)];
+                    }
+                }
+
+                return rett;
+
+            }            
+            ret.push_back(value);
+            return ret;
+        }else{
+            return ret;
+        }
+    }
+
+
+
+    proc getType(colname:string):string{
+        if(this.rowColTypeDomain.member(colname)){
+            return this.dataType[colname];
         }else{
             return "";
         }
     }
+
+
+
 /*
     `this[colname]` gets the data from column name.
         :arg colname: `string` name of the column.
@@ -637,7 +703,6 @@ pragma "no doc"
         :arg coltype: `string` type of the column.
         :type coltype: `string`
 
-   
 
 */
     proc __addColumn(colnum:int(32),colname:string,coltype:string=""){
