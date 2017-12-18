@@ -47,9 +47,6 @@ class MysqlConnection:ConnectionBase{
            // writeln("conecting to ",this.dsn);
             
 			this.conn = mysql_init(this.conn);
-
-            
-
 			//this.conn = PQconnectdb(this.dsn.localize().c_str());
 
   		if (mysql_real_connect(this.conn, host.localize().c_str(), user.localize().c_str(), passwd.localize().c_str(), 
@@ -132,6 +129,10 @@ class MysqlCursor:CursorBase{
    var mycon:c_ptr(MYSQL);
    var res:c_ptr(MYSQL_RES );
    var fields:c_ptr(MYSQL_FIELD );
+
+   var mapperDom:domain(string); 
+   var type_mapper:[mapperDom]string; 
+ 
    
    var nFields:int(32);
    var numRows:int(32);
@@ -140,7 +141,20 @@ class MysqlCursor:CursorBase{
    proc MysqlCursor(con:MysqlConnection, pgcon:c_ptr(MYSQL)){
        this.con = con;
        this.mycon=pgcon;
+       this.__registerTypes();
    }
+   proc __registerTypes(){
+        this.__registerTypeName(20, "int"); // int8
+   }
+   proc __registerTypeName(oid:int, cdo_type:string){
+        this.type_mapper[oid:string]= cdo_type;
+    }
+   proc __typeToString(oid:c_int):string{
+        if(this.mapperDom.member(oid:string)){
+            return this.type_mapper[oid:string];
+        }
+        return oid:string;        
+    }
 
     proc rowcount():int(32){
         return this.numRows;
@@ -193,7 +207,10 @@ class MysqlCursor:CursorBase{
         	var ii:int(32)=0;
         	while ( ii < this.nFields){    
 				var colname = new string(__get_mysql_field_name_by_number(this.fields,ii:c_int));
-            	this.__addColumn(ii,colname);
+                //I need to get mysql type
+            	//var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
+                
+                this.__addColumn(ii,colname);
             	ii+=1;
         	}
         	this.numRows = mysql_num_rows(this.res):int(32);
@@ -347,6 +364,77 @@ class MysqlCursor:CursorBase{
     proc messages(){
 
     }
+
+proc __quote_columns(colname:string):string{
+        if(colname=="*"){
+            return "*";
+        }
+
+        return "`"+colname+"`";
+    }
+    proc __quote_values(value:string):string{
+        return "'"+value+"'";
+    }
+    proc insertRecord(table:string, ref el:?eltType):string{
+
+        var cols = this.__objToArray(el);
+        return this.insert(table, cols);       
+    }
+    proc insert(table:string, data:[?D]string):string{
+        var colset:[{1..0}]string;
+        var valset:[{1..0}]string;
+
+         for idx in D{
+            colset.push_back(this.__quote_columns(idx));
+            valset.push_back(this.__quote_values(data[idx]));
+        }
+        var cols_part = ", ".join(colset);
+        var vals_part = ", ".join(valset);
+        var sql="";
+        try{
+            sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
+        }catch{
+            writeln("Error on building insert query");
+        }
+         this.execute(sql);
+         return sql;
+    }
+    proc update(table:string, whereCond:string, data:[?D]string):string{
+        var colvalset:[{1..0}]string; 
+        for idx in D{
+            colvalset.push_back(this.__quote_columns(idx)+" = "+this.__quote_values(data[idx]));
+        }
+        var colsvals_part = ", ".join(colvalset);
+        var sql="";
+        try{
+            sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
+        }catch{
+            writeln("Error on building update query");
+            
+        }
+         this.execute(sql);
+         return sql;
+    }
+
+    proc update(table:string, whereCond:string, ref el:?eltType):string{
+        var cols = this.__objToArray(el);
+        return this.update(table, whereCond, cols);
+    }
+
+    proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
+        return this.update(table,whereCond,el);
+    }
+    proc Delete(table:string, whereCond:string):string{
+        var sql ="";
+        try{
+            sql = "DELETE FROM %s WHERE (%s)".format(table,whereCond);
+        }catch{
+            writeln("Error on formating delete statement");
+        }
+        this.execute(sql);
+        return sql;
+    }
+
 }
 
 

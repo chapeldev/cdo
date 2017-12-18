@@ -516,10 +516,7 @@ class Row{
 
             if(value.startsWith(array_header_trail[1]) && value.endsWith(array_header_trail[2]) && strtype.endsWith("array")){
                 
-                //var tmp_val = value.split("{");
-                //value = "".join(tmp_val);
-                //tmp_val = value.split("}");
-                //value = "".join(tmp_val);
+              
 
                 var sz = value.length;
                 
@@ -935,9 +932,10 @@ pragma "no doc"
         return "";
     }
 
-    proc updateRecord(table:string, whereCond:string, data:[?D]string):string{
+    proc updateRecord(table:string, whereCond:string,  ref el: ?eltType):string{
         return "";
     }
+
 
     proc Delete(table:string, whereCond:string):string{
         return "";

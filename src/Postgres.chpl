@@ -188,7 +188,7 @@ class PgCursor:CursorBase{
    var pgcon:c_ptr(PGconn);
    var res:c_ptr(PGresult);
 
-   var mapperDom:domain(string); //When I declare this the compiler says that there is an error
+   var mapperDom:domain(string); 
    var type_mapper:[mapperDom]string; 
  
    

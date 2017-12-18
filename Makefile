@@ -31,6 +31,9 @@ pgsql:
 mysqlex:
 	chpl -o ./bin/mysqlex ./examples/exmysql.chpl ./src/mysql_helper.c ./src/mysql_helper.c    -M ./src -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 
+update_mysql_ex:
+	chpl -o ./bin/update_mysql_ex ./examples/update_mysql_ex.chpl  -M ./src -I/usr/include/postgresql/ ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
+
 sqlitex:
 	chpl -o ./bin/sqlitex ./examples/exsqlite.chpl    -M ./src
 
