@@ -1,12 +1,14 @@
 module Main{
     use Cdo;
-    use Postgres;
+    use Mysql;
     proc main(){
-            var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
+          var con = MysqlConnectionFactory("localhost", "root", "teste", "root");        //Open a cursor
 
-            var query = con.table("public.contacts");
+         //var qb = new QueryBuilder( new MySqlQueryBuilder(con, "contacts"));
 
-          /*query.Select(["id","name"]).Where("nome","'John'")
+
+            con.table("contacts");
+        /*query.Select(["id","name"]).Where("nome","'John'")
           .Where("email","'John@email.co'")
           .orWhere("idade","31")
           .WhereIn("id",["1","2","3"])
@@ -21,7 +23,7 @@ module Main{
           .Limit(1)
           .Offset(3)
           .Count("id");          
-*/
+          
           for row in query.Select(["id","name"]).Where("name","like","%Carlos%").Get(){
             writeln(row["id"]," ",row["name"]);
           }
@@ -59,7 +61,7 @@ module Main{
           writeln(query.toSql());
           
           query.clear();
-          query.Delete("id","24");
+          query.Delete("id","24").Exec();
 
           var kvDom:domain(string);
           var kv:[kvDom]string;
@@ -74,7 +76,8 @@ module Main{
             writeln(row["id"]," ",row["name"]," ",row["email"]);
           }
           
-          query.clear(); 
+          query.clear();
+          */ 
           con.close();
           writeln("end");
     }

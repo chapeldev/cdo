@@ -302,6 +302,169 @@ class ModelEngine{
 
 }
 
+class Row{
+
+    pragma "no doc"
+    var num:int(32);
+    
+    var dummy:domain(string);
+    pragma "no doc"
+    var rowColDomain_:domain(string); // the compiler says that this type not found.
+    pragma "no doc"
+    var data:[rowColDomain_]string;
+
+    pragma "no doc"
+    var rowColTypeDomain:domain(string);
+    
+    pragma "no doc"
+    var dataType:[rowColTypeDomain]string;
+
+   
+    proc hasColumn(colname:string):bool{
+        return this.rowColDomain_.member(colname);
+    }
+/*
+`addData` adds in an associative array the column and its correspondent data.
+        :arg colname: `string` name of the column.
+        :type colname: `string`
+
+        :arg datum: `string` data returned.
+        :type datum: `string`
+       
+*/
+
+    proc addData(colname:string, datum:string, dtype:string="string"){
+        this.data[colname] = datum;
+        this.dataType[colname] = dtype;
+    }
+/*
+    `get` gets the data from column name.
+        :arg colname: `string` name of the column.
+        :type colname: `string`
+
+     :return: data value of the column `colname`.
+     :rtype: `string`
+       
+*/
+    
+    proc get(colname:string){
+        
+        if(this.rowColDomain_.member(colname)){
+            
+            return this.data[colname];
+        }else{
+            
+            return "";
+        }
+    }
+
+
+    proc getArray(colname:string,
+    array_header_trail:string="{}",
+    separator:string=",",
+    strip_comma:bool=true
+
+    ){
+        var D:domain(1);
+        var ret:[D]string;
+
+        if(this.rowColDomain_.member(colname)){
+
+            var strtype = this.getType(colname);
+
+            var value = this.data[colname]; 
+
+            if(value.startsWith(array_header_trail[1]) && value.endsWith(array_header_trail[2]) && strtype.endsWith("array")){
+                
+              
+
+                var sz = value.length;
+                
+                var values = value[2..(value.length-1)];
+                
+                var rett = values.split(",");
+                for r in rett{
+                    if(r.startsWith("\"")&&r.endsWith("\"")&&strip_comma){
+                        r = r[2..(r.length-1)];
+                    }
+                }
+
+                return rett;
+
+            }            
+            ret.push_back(value);
+            return ret;
+        }else{
+            return ret;
+        }
+    }
+
+
+
+    proc getType(colname:string):string{
+        if(this.rowColTypeDomain.member(colname)){
+            return this.dataType[colname];
+        }else{
+            return "";
+        }
+    }
+
+
+
+/*
+    `this[colname]` gets the data from column name.
+        :arg colname: `string` name of the column.
+        :type colname: `string`
+
+     :return: data value of the column `colname`.
+     :rtype: `string`
+       
+*/
+
+
+    proc this(colname:string):string{
+        return this.get(colname);
+    }
+/*
+    `this[colnum]` gets the data from column number.
+        :arg colnum: `int` number of the column.
+        :type colnum: `int`
+
+     :return: data value of the column `colnum`.
+     :rtype: `string`
+       
+*/
+
+    proc this(colnum:int):string{
+        var i = 1;
+        for idx in this.rowColDomain{
+            if(i == colnum){
+                return this.data[idx];
+            }
+            i+=1;
+        }
+        return "";
+    }
+    /*pragma "no doc"
+    proc writeThis(f){
+        try{
+            for col in this.rowColDomain{
+                f.write(col,"=",this.data[col]," ");
+            }
+            f.writeln(" ");
+
+        }catch{
+            writeln("Cannot Write Row");//todo: improves messages with log
+        }
+    }
+*/
+
+}
+
+
+
+
+
 class ModelRelationInfo{
     
 var relType:string;
@@ -426,31 +589,22 @@ class Model{
     
 }
 
-pragma "no doc"
-enum CdoType{
-    DATE,
-    TIME,
-    TIMESTAMP,
-    TIMESTAMP_FROM_TICKS,
-    TIME_FROM_TICKS,
-    DATE_FROM_TICKS,
-    BINARY,
-    STRING, 
-    NUMBER, 
-    DATETIME, 
-    ROWID 
-}
 
 /*
 The  `Row` class stores information from result set send by the database server.
 */
+
+/* copia
 class Row{
 
-
     pragma "no doc"
-    var rowColDomain:domain(string); // the compiler says that this type not found.
+    var num:int(32);
+    
+    var dummy:domain(string);
     pragma "no doc"
-    var data:[rowColDomain]string;
+    var rowColDomain_:domain(string); // the compiler says that this type not found.
+    pragma "no doc"
+    var data:[rowColDomain_]string;
 
     pragma "no doc"
     var rowColTypeDomain:domain(string);
@@ -458,38 +612,19 @@ class Row{
     pragma "no doc"
     var dataType:[rowColTypeDomain]string;
 
-    pragma "no doc"
-    var num:int(32);
+   
     proc hasColumn(colname:string):bool{
-        return this.rowColDomain.member(colname);
+        return this.rowColDomain_.member(colname);
     }
-/*
-`addData` adds in an associative array the column and its correspondent data.
-        :arg colname: `string` name of the column.
-        :type colname: `string`
-
-        :arg datum: `string` data returned.
-        :type datum: `string`
-       
-*/
 
     proc addData(colname:string, datum:string, dtype:string="string"){
         this.data[colname] = datum;
         this.dataType[colname] = dtype;
     }
-/*
-    `get` gets the data from column name.
-        :arg colname: `string` name of the column.
-        :type colname: `string`
-
-     :return: data value of the column `colname`.
-     :rtype: `string`
-       
-*/
     
     proc get(colname:string){
         
-        if(this.rowColDomain.member(colname)){
+        if(this.rowColDomain_.member(colname)){
             
             return this.data[colname];
         }else{
@@ -508,7 +643,7 @@ class Row{
         var D:domain(1);
         var ret:[D]string;
 
-        if(this.rowColDomain.member(colname)){
+        if(this.rowColDomain_.member(colname)){
 
             var strtype = this.getType(colname);
 
@@ -551,30 +686,9 @@ class Row{
 
 
 
-/*
-    `this[colname]` gets the data from column name.
-        :arg colname: `string` name of the column.
-        :type colname: `string`
-
-     :return: data value of the column `colname`.
-     :rtype: `string`
-       
-*/
-
-
     proc this(colname:string):string{
         return this.get(colname);
     }
-/*
-    `this[colnum]` gets the data from column number.
-        :arg colnum: `int` number of the column.
-        :type colnum: `int`
-
-     :return: data value of the column `colnum`.
-     :rtype: `string`
-       
-*/
-
     proc this(colnum:int):string{
         var i = 1;
         for idx in this.rowColDomain{
@@ -585,21 +699,12 @@ class Row{
         }
         return "";
     }
-    /*pragma "no doc"
-    proc writeThis(f){
-        try{
-            for col in this.rowColDomain{
-                f.write(col,"=",this.data[col]," ");
-            }
-            f.writeln(" ");
+ 
 
-        }catch{
-            writeln("Cannot Write Row");//todo: improves messages with log
-        }
-    }
+} 
+
 */
 
-}
 
 /*
 The `ColumnInfo` class holds infomration about returned columns.
@@ -668,16 +773,15 @@ pragma "no doc"
 
     proc table(table:string):QueryBuilder{
         return nil;
+    }
+    proc Table(table:string):QueryBuilder{
+        return nil;
     } 
     
     
     proc model():ModelEngine{
         return nil;
     }
-
-    
-
-
 
 }
 /*

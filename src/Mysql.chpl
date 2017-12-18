@@ -121,6 +121,15 @@ class MysqlConnection:ConnectionBase{
 		mysql_close(this.conn);
     }
 
+    proc Table(table:string):QueryBuilder{
+        return new QueryBuilder(new MySqlQueryBuilder(this,table));
+    }
+    proc table(table:string):QueryBuilder{
+        
+       return new QueryBuilder(new MySqlQueryBuilder());
+     
+    }
+
 }
 
 class MysqlCursor:CursorBase{
@@ -130,9 +139,9 @@ class MysqlCursor:CursorBase{
    var res:c_ptr(MYSQL_RES );
    var fields:c_ptr(MYSQL_FIELD );
 
-   var mapperDom:domain(string); 
+  /* var mapperDom:domain(string); 
    var type_mapper:[mapperDom]string; 
- 
+ */
    
    var nFields:int(32);
    var numRows:int(32);
@@ -147,12 +156,12 @@ class MysqlCursor:CursorBase{
         this.__registerTypeName(20, "int"); // int8
    }
    proc __registerTypeName(oid:int, cdo_type:string){
-        this.type_mapper[oid:string]= cdo_type;
+        //this.type_mapper[oid:string]= cdo_type;
     }
    proc __typeToString(oid:c_int):string{
-        if(this.mapperDom.member(oid:string)){
+        /*if(this.mapperDom.member(oid:string)){
             return this.type_mapper[oid:string];
-        }
+        }*/
         return oid:string;        
     }
 
@@ -437,9 +446,11 @@ proc __quote_columns(colname:string):string{
 
 }
 
+class MySqlQueryBuilder:QueryBuilderBase{
+    proc MySqlQueryBuilder(){
 
-
-
+    }
+}
 
 
 module MysqlNative{

@@ -111,7 +111,7 @@ class PgConnection:ConnectionBase{
         PQfinish(this.conn);
     }
 
-    proc table(table:string){
+    proc table(table:string):QueryBuilder{
         return new QueryBuilder(new PgQueryBuilder(this,table));
     }
 
