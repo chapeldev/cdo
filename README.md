@@ -5,6 +5,13 @@ Chapel Data Object is a library that helps to connect to databases like Mysql,Po
 
 The module Cdo provides a simple way to hide the complexities that each database connector library has.
 
+# Acknowledgment
+
+We would like to thank [Deep 6 AI](https://deep6.ai/) for their support on this project.
+
+We would like to thank [Brian Dolan](https://github.com/buddha314), [Ben Albrecht](https://github.com/ben-albrecht), [Brad Chamberlain](https://github.com/bradcray) 
+ and all [Chapel Community](https://github.com/chapel-lang) for all motivations, suggestions and help.
+
 ## Cdo with Postgres
 
 1. Have latest Chapel compiler version installed. 
@@ -210,6 +217,9 @@ writeln("end");
 }
 }
 ```
+
+# Interesting Projects
+[Numsuch](https://github.com/buddha314/numsuch) numerical and Machine Learning library for Chapel Language.
 
 # Warning
 
