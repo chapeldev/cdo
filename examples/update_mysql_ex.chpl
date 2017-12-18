@@ -23,15 +23,11 @@ proc main(){
     
   writeln(cursor.updateRecord("contacts","id='5'" ,obj));
 //Select
-  
- 
     cursor.query("SELECT * FROM contacts");
     //Get results
     for row in  cursor{
         writeln(row["id"]," ",row["name"]," ", row["email"]);
     }
-
-  
 // Data associatave array
     var d:domain(string);
     var data:[d]string;

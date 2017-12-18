@@ -14,13 +14,10 @@ model_pg_ex:
 array_agg_pg:
 	chpl -o ./bin/array_agg_pg ./examples/array_agg_pg.chpl  -M ./src -I/usr/include/postgresql/
 
-
-
 model_pg_ex2:
 	chpl -o ./bin/model_pg_ex2 ./examples/model_pg_ex2.chpl  -M ./src -I/usr/include/postgresql/
 model_pg_ex3:
 	chpl -o ./bin/model_pg_ex3 ./examples/model_pg_ex3.chpl  -M ./src -I/usr/include/postgresql/
-
 update_pg_ex:
 	chpl -o ./bin/update_pg_ex ./examples/update_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 
@@ -32,7 +29,10 @@ mysqlex:
 	chpl -o ./bin/mysqlex ./examples/exmysql.chpl ./src/mysql_helper.c ./src/mysql_helper.c    -M ./src -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 
 update_mysql_ex:
-	chpl -o ./bin/update_mysql_ex ./examples/update_mysql_ex.chpl  -M ./src -I/usr/include/postgresql/ ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
+	chpl -o ./bin/update_mysql_ex ./examples/update_mysql_ex.chpl  -M ./src  ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
+
+delete_mysql_ex:
+	chpl -o ./bin/delete_mysql_ex ./examples/delete_mysql_ex.chpl  -M ./src -I/usr/include/postgresql/ ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 
 sqlitex:
 	chpl -o ./bin/sqlitex ./examples/exsqlite.chpl    -M ./src
@@ -41,4 +41,3 @@ clear:
 	rm	pgsql
 	rm	mysqlex
 	rm	sqlitex
-
