@@ -448,7 +448,6 @@ proc __quote_columns(colname:string):string{
 
 class MySqlQueryBuilder:QueryBuilderBase{
     proc MySqlQueryBuilder(){
-
     }
 }
 
