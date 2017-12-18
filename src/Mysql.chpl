@@ -172,7 +172,7 @@ class MysqlCursor:CursorBase{
 
     proc execute(query:string, params){
         try{
-           return this.execute(query.format((...params)));
+          this.execute(query.format((...params)));
         }catch{
             writeln("Error");
         }
