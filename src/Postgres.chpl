@@ -562,6 +562,38 @@ class PgCursor:CursorBase{
         return this.update(table, whereCond, cols);
     }
 
+    proc pgUpdateDomainInColumnArray( table:string, column:string, dataDomain, whereCond:string=" 1=1 "):string{
+
+        var sz = dataDomain.size;
+        var data:string="{";
+        var i=0;
+        for d in dataDomain{
+            if( i < sz-1){
+                if(isString(d)||isComplex(d)){
+                    data += "\""+d:string+"\", ";
+                }else{
+                    data += d:string+", ";
+                }
+            }else{
+                if(isString(d)||isComplex(d)){
+                    data += "\""+d:string+"\"}";
+                }else{
+                    data += d:string+"}";
+                }
+            }
+            i+=1;
+        }
+        var sql="";
+        try{
+            sql = "UPDATE %s SET %s = %s WHERE (%s)".format(table, column, this.__quote_values(data), whereCond);
+        }catch{
+            writeln("Error on building update query");
+        }
+         this.execute(sql);
+         return sql; 
+
+    }
+
     proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
         return this.update(table,whereCond,el);
     }
