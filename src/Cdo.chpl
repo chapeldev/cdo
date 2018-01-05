@@ -1020,6 +1020,10 @@ pragma "no doc"
         return "";
     }
 
+    
+
+
+
 
 /*
     `insert` inserts associative array into database  table.
@@ -1569,6 +1573,10 @@ class Connection{
 */
 class Cursor{
     forwarding var cursor_drv: CursorBase;
+
+    proc getDriver(){
+        return this.cursor_drv; 
+    }
 }
 
 class QueryBuilder{

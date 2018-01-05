@@ -56,6 +56,7 @@ class PgConnection:ConnectionBase{
          
      }
 
+
     proc getNativeConection(): c_ptr(PGconn){
         return this.conn;   
     }
@@ -201,6 +202,10 @@ class PgCursor:CursorBase{
        this.pgcon=pgcon;
        this.__registerTypes();
    }
+       proc teste(){
+        writeln("hello native ");
+    }
+
 
     proc __registerTypes(){
         this.__registerTypeName(20, "int"); // int8
@@ -477,13 +482,53 @@ class PgCursor:CursorBase{
         var cols = this.__objToArray(el);
         return this.insert(table, cols);       
     }
+
+    proc pgInsertDomainInColumnArray( table:string, column:string, dataDomain):string{
+
+        var sz = dataDomain.size;
+        var data:string="{";
+        var i=0;
+        for d in dataDomain{
+            if( i < sz-1){
+                if(isString(d)||isComplex(d)){
+                    data += "\""+d:string+"\", ";
+                }else{
+                    data += d:string+", ";
+                }
+            }else{
+                if(isString(d)||isComplex(d)){
+                    data += "\""+d:string+"\"}";
+                }else{
+                    data += d:string+"}";
+                }
+            }
+            i+=1;
+        }
+        var sql:string;
+        try{
+            sql = "INSERT INTO %s(%s) VALUES(%s)".format(table, column, this.__quote_values(data));
+        }catch{
+            writeln("Error on building insert query");
+        }
+         this.execute(sql);
+         return sql; 
+
+    }
+    
+
     proc insert(table:string, data:[?D]string):string{
         var colset:[{1..0}]string;
         var valset:[{1..0}]string;
 
          for idx in D{
-            colset.push_back(this.__quote_columns(idx));
-            valset.push_back(this.__quote_values(data[idx]));
+             if( isDomain(data[idx])){
+
+
+             }else{
+                colset.push_back(this.__quote_columns(idx));
+                valset.push_back(this.__quote_values(data[idx]));
+             }
+            
         }
         var cols_part = ", ".join(colset);
         var vals_part = ", ".join(valset);
