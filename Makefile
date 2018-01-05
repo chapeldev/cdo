@@ -5,6 +5,9 @@ query_builder_ex:
 insert_pg_ex:
 	chpl -o ./bin/insert_pg_ex ./examples/insert_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 
+insert_domain_pg:
+	chpl -o ./bin/insert_domain_pg ./examples/insert_domain_pg.chpl  -M ./src -I/usr/include/postgresql/
+
 delete_pg_ex:
 	chpl -o ./bin/delete_pg_ex ./examples/delete_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 
