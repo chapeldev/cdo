@@ -283,12 +283,20 @@ class PgCursor:CursorBase{
 
     proc execute(query:string, params){
         try{
-            this.execute(query.format((...params)));
+            var isT =false;
+            for p in params{
+                if(isTuple(p)){
+                    this.query(query,p);
+                    isT=true;
+                }   
+            }
+            if(!isT){
+                this.execute(query.format((...params)));
+            }
         }catch{
             writeln("Error");
         }
     }
-
     proc execute(query:string){
         this.res = PQexec(this.pgcon, query.localize().c_str());
         if (PQresultStatus(res) !=  PGRES_COMMAND_OK)
@@ -344,9 +352,18 @@ class PgCursor:CursorBase{
 
     proc query(query:string, params){
         try{
-            this.query(query.format((...params)));
+            var isT =false;
+            for p in params{
+                if(isTuple(p)){
+                    this.query(query,p);
+                    isT=true;
+                }   
+            }
+            if(!isT){
+                this.query(query.format((...params)));
+            }
         }catch{
-            writeln("Error");
+            writeln("Error on string Format.");
         }
     }
 
