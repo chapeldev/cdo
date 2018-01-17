@@ -1,18 +1,19 @@
 module Main{
-
-class A{
-
-type selfType;
-    proc print(){
-        writeln("hi, from A");
-    }
-}
-class B{
-    forwarding var a:A(B);// Chenged here
-}
+use Types;
     proc main(){
-        var b = new B(new A(B));
-        b.print();
-        writeln("End");
+
+
+        foo("select %s from table",("name"));
+
+    }
+    proc foo(str:string, params){
+        try{
+
+
+            writeln(str.format((...params)));
+        }catch{
+            writeln("Error");
+        }
+
     }
 }

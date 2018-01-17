@@ -75,7 +75,7 @@ class MysqlConnection:ConnectionBase{
     }
 
     proc cursor(){
-        return new Cursor(new MysqlCursor(this,this.conn));
+        //return new Cursor(new MysqlCursor(this,this.conn));
     }
     proc Begin(){
         this.setAutocommit(false);
@@ -121,16 +121,17 @@ class MysqlConnection:ConnectionBase{
 		mysql_close(this.conn);
     }
 
-    proc Table(table:string):QueryBuilder{
-        return new QueryBuilder(new MySqlQueryBuilder(this,table));
-    }
-    proc table(table:string):QueryBuilder{
-        
-       return new QueryBuilder(new MySqlQueryBuilder());
-     
+    proc tablet(table:string):QueryBuilder{
+       //return new QueryBuilder(new MySqlQueryBuilder());
+       return nil;
     }
 
 }
+
+/*class MySqlQueryBuilder{
+    proc MySqlQueryBuilder(){
+    }
+}*/
 
 class MysqlCursor:CursorBase{
     
@@ -374,7 +375,7 @@ class MysqlCursor:CursorBase{
 
     }
 
-proc __quote_columns(colname:string):string{
+    proc __quote_columns(colname:string):string{
         if(colname=="*"){
             return "*";
         }
@@ -446,10 +447,7 @@ proc __quote_columns(colname:string):string{
 
 }
 
-class MySqlQueryBuilder:QueryBuilderBase{
-    proc MySqlQueryBuilder(){
-    }
-}
+
 
 
 module MysqlNative{

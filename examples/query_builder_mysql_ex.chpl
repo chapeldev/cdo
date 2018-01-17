@@ -6,8 +6,7 @@ module Main{
 
          //var qb = new QueryBuilder( new MySqlQueryBuilder(con, "contacts"));
 
-
-            con.table("contacts");
+            con.tablet("contacts");
         /*query.Select(["id","name"]).Where("nome","'John'")
           .Where("email","'John@email.co'")
           .orWhere("idade","31")

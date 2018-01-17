@@ -37,11 +37,10 @@ update_mysql_ex:
 delete_mysql_ex:
 	chpl -o ./bin/delete_mysql_ex ./examples/delete_mysql_ex.chpl  -M ./src -I/usr/include/postgresql/ ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 insert_mysql_ex:
-	chpl -o ./bin/insert_mysql_ex ./examples/insert_mysql_ex.chpl  -M ./src -I/usr/include/postgresql/ ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
+	chpl -o ./bin/insert_mysql_ex ./examples/insert_mysql_ex.chpl  -M ./src  ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 
 query_builder_mysql_ex:
-	chpl -o ./bin/query_builder_mysql_ex ./examples/query_builder_mysql_ex.chpl  -M ./src -I/usr/include/postgresql/ ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
-
+	chpl -o ./bin/query_builder_mysql_ex ./examples/query_builder_mysql_ex.chpl  -M ./src  ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 
 sqlitex:
 	chpl -o ./bin/sqlitex ./examples/exsqlite.chpl    -M ./src
