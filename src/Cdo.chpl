@@ -772,7 +772,7 @@ pragma "no doc"
         writeln("Hello from ConnectionBase");
     }
 
-    proc tablet(table:string):QueryBuilder{
+    proc table(table:string):QueryBuilder{
         return nil;
     }
     /*proc Table(table:string):QueryBuilder{
@@ -1080,7 +1080,7 @@ pragma "no doc"
     :return: Row data.
     :rtype: `Row`
     */
-    proc this(idx:int):Row{
+    proc this(idx):Row{
         
     }
 

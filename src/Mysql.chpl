@@ -17,7 +17,7 @@ module Mysql{
     use Cdo;
     use SysBasic;
 	use MysqlNative;
-    
+    use Mysql_query_builder;
 
     require "my_global.h";
     require "mysql.h" ;
@@ -75,7 +75,7 @@ class MysqlConnection:ConnectionBase{
     }
 
     proc cursor(){
-        //return new Cursor(new MysqlCursor(this,this.conn));
+        return new Cursor(new MysqlCursor(this,this.conn));
     }
     proc Begin(){
         this.setAutocommit(false);
@@ -121,17 +121,10 @@ class MysqlConnection:ConnectionBase{
 		mysql_close(this.conn);
     }
 
-    proc tablet(table:string):QueryBuilder{
-       //return new QueryBuilder(new MySqlQueryBuilder());
-       return nil;
+    proc table(table:string):QueryBuilder{
+       return new QueryBuilder(new MySqlQueryBuilder(this,table));
     }
-
 }
-
-/*class MySqlQueryBuilder{
-    proc MySqlQueryBuilder(){
-    }
-}*/
 
 class MysqlCursor:CursorBase{
     
