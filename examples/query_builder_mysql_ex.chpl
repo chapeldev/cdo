@@ -2,13 +2,12 @@ module Main{
     use Cdo;
     use Mysql;
     proc main(){
-          var con = MysqlConnectionFactory("localhost", "root", "teste", "root");        //Open a cursor
+          var con = MysqlConnectionFactory("localhost:3306", "marcos", "teste", "12345");        //Open a cursor
 
          //var qb = new QueryBuilder( new MySqlQueryBuilder(con, "contacts"));
 
-
-            con.table("contacts");
-        /*query.Select(["id","name"]).Where("nome","'John'")
+         var query =  con.table("contacts");
+        query.Select(["id","name"]).Where("nome","'John'")
           .Where("email","'John@email.co'")
           .orWhere("idade","31")
           .WhereIn("id",["1","2","3"])
@@ -56,7 +55,7 @@ module Main{
           writeln(query.toSql());
           
           query.clear();
-          writeln("Join count = ",query.Join("company","company.id","contacts.company_id")
+          /*writeln("Join count = ",query.Join("company","company.id","contacts.company_id")
           .rightJoin("company AS C2","c2.id","contacts.company_id").Count());
           writeln(query.toSql());
           

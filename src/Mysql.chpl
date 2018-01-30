@@ -17,7 +17,7 @@ module Mysql{
     use Cdo;
     use SysBasic;
 	use MysqlNative;
-    
+    use Mysql_query_builder;
 
     require "my_global.h";
     require "mysql.h" ;
@@ -121,15 +121,9 @@ class MysqlConnection:ConnectionBase{
 		mysql_close(this.conn);
     }
 
-    proc Table(table:string):QueryBuilder{
-        return new QueryBuilder(new MySqlQueryBuilder(this,table));
-    }
     proc table(table:string):QueryBuilder{
-        
-       return new QueryBuilder(new MySqlQueryBuilder());
-     
+       return new QueryBuilder(new MySqlQueryBuilder(this,table));
     }
-
 }
 
 class MysqlCursor:CursorBase{
@@ -374,7 +368,7 @@ class MysqlCursor:CursorBase{
 
     }
 
-proc __quote_columns(colname:string):string{
+    proc __quote_columns(colname:string):string{
         if(colname=="*"){
             return "*";
         }
@@ -446,10 +440,7 @@ proc __quote_columns(colname:string):string{
 
 }
 
-class MySqlQueryBuilder:QueryBuilderBase{
-    proc MySqlQueryBuilder(){
-    }
-}
+
 
 
 module MysqlNative{

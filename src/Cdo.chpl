@@ -310,6 +310,7 @@ class Row{
     var dummy:domain(string);
     pragma "no doc"
     var rowColDomain_:domain(string); // the compiler says that this type not found.
+    
     pragma "no doc"
     var data:[rowColDomain_]string;
 
@@ -774,9 +775,9 @@ pragma "no doc"
     proc table(table:string):QueryBuilder{
         return nil;
     }
-    proc Table(table:string):QueryBuilder{
+    /*proc Table(table:string):QueryBuilder{
         return nil;
-    } 
+    } */
     
     
     proc model():ModelEngine{
@@ -1079,7 +1080,7 @@ pragma "no doc"
     :return: Row data.
     :rtype: `Row`
     */
-    proc this(idx:int):Row{
+    proc this(idx):Row{
         
     }
 
@@ -1581,6 +1582,8 @@ class Cursor{
 
 class QueryBuilder{
     forwarding var query_driver: QueryBuilderBase;
+
+    //var query_driver: QueryBuilderBase;
 
     /*proc writeThis(f){
         this.query_driver.writeThis(f);
