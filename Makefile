@@ -2,6 +2,10 @@
 query_builder_ex:
 	chpl -o ./bin/query_builder_ex ./examples/query_builder_ex.chpl  -M ./src -I/usr/include/postgresql/
 
+execute_pg:
+	chpl -o ./bin/execute_pg ./examples/execute_pg.chpl  -M ./src -I/usr/include/postgresql/
+
+
 insert_pg_ex:
 	chpl -o ./bin/insert_pg_ex ./examples/insert_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 

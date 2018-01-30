@@ -283,16 +283,35 @@ class PgCursor:CursorBase{
 
     proc execute(query:string, params){
         try{
-            var isT =false;
-            for p in params{
-                if(isTuple(p)){
-                    this.query(query,p);
-                    isT=true;
-                }   
+            //This is not a code art.
+            if(isTuple(params)){
+                var isT =false;
+                for p in params{
+                    writeln("params = ",p);
+                    if(isTuple(p)){
+                        this.query(query,p);
+                        isT=true;
+                    }
+                  
+                }
+                if(!isT){
+                    this.execute(query.format((...params)));
+                }
+
             }
-            if(!isT){
-                this.execute(query.format((...params)));
+            if(isArray(params)){   
+                for p in params{
+                    //writeln("params = ",p);
+                    if(isTuple(p)){
+                        this.execute(query.format((...p)));
+                    }else{
+                        this.execute(query.format(p));
+                    }
+                   
+                }
             }
+
+
         }catch{
             writeln("Error");
         }
