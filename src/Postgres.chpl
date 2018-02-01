@@ -197,6 +197,8 @@ class PgCursor:CursorBase{
    var numRows:int(32);
    var curRow:int(32)=0;
 
+    
+
    proc PgCursor(con:PgConnection, pgcon:c_ptr(PGconn)){
        this.con = con;
        this.pgcon=pgcon;
@@ -310,7 +312,7 @@ class PgCursor:CursorBase{
                    
                 }
             }
-
+            
 
         }catch{
             writeln("Error");
@@ -340,6 +342,7 @@ class PgCursor:CursorBase{
         }
         this.numRows =PQntuples(res):int(32);
         this.curRow=0;
+        this.resultCached=false;
     }
 
     proc query(query:string){
@@ -366,6 +369,7 @@ class PgCursor:CursorBase{
         }
         this.numRows =PQntuples(res):int(32);
         this.curRow=0;
+        this.resultCached=false;
         //return this.numRows;
    }
 
@@ -446,10 +450,51 @@ class PgCursor:CursorBase{
     }
 
     iter these()ref:Row{
-        for row in this.fetchall(){
-            yield row;
+        if(!this.resultCached){ // Creates a cache
+            this.resultCacheDom.clear();
+            
+            for row in this.fetchall(){
+                this.resultCache.push_back(row);
+            }
+            this.resultCached=true;
+        }
+
+        for r in this.resultCache{
+                yield r;
         }
     }
+
+  /*  iter these(param tag: iterKind)ref:Row 
+        where tag == iterKind.standalone {
+  
+        if(!this.resultCached){ // Creates a cache
+            this.resultCacheDom.clear();
+            
+            for row in this.fetchall(){
+                this.resultCache.push_back(row);
+            }
+            this.resultCached=true;
+        }
+  
+  //if (verbose) then
+        var numTasks = here.maxTaskPar;
+        writeln("In these() standalone, creating ", numTasks, " tasks");
+        coforall tid in 0..#numTasks {
+            const myIters = this.computeChunk(0..#(this.resultCacheDom.size-1), tid, numTasks);
+    //if (verbose) then
+        writeln("task ", tid, " owns ", myIters);
+        for i in myIters do
+            yield this.resultCache[i+1];
+        }
+   }
+*/
+  
+
+
+
+
+
+
 
     proc fetchone():Row{
         if(this.curRow==this.numRows){
@@ -485,15 +530,11 @@ class PgCursor:CursorBase{
         }
     }
     iter fetchall():Row{
-        //var rowsDomain:domain(1)={0..1};
-        //var rows:[rowsDomain]Row;
-
         var res:Row = this.fetchone();
         while(res!=nil){
-            yield res;
-            res = this.fetchone();
-        }
-        
+                yield res;
+                res = this.fetchone();
+        }        
     }
 
     proc next():Row{

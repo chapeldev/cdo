@@ -794,6 +794,12 @@ pragma "no doc"
     var colDomain:domain(int(32));
 pragma "no doc"    
     var columns:[colDomain]ColumnInfo;
+
+    var resultCacheDom:domain(1); 
+    var resultCache:[resultCacheDom]Row; // Creates a cache for Row results
+    var resultCached:bool=false; // Marks if it is cached or not
+
+
 /*
 `__addColumn` is a helper method that adds column infomrations to column result list.
         :arg colnum: `int` number of the column.
@@ -1093,6 +1099,48 @@ pragma "no doc"
     iter these()ref:Row{
 
     }
+
+    /*iter these(param tag: iterKind)ref:Row
+        where tag == iterKind.standalone {
+    }*/
+
+    iter these(param tag: iterKind)ref:Row 
+        where tag == iterKind.standalone {
+  
+        if(!this.resultCached){ // Creates a cache
+            this.resultCacheDom.clear();
+            
+            for row in this.fetchall(){
+                this.resultCache.push_back(row);
+            }
+            this.resultCached=true;
+        }
+  
+  //if (verbose) then
+        var numTasks = here.maxTaskPar;
+        writeln("In these() standalone, creating ", numTasks, " tasks");
+        coforall tid in 0..#numTasks {
+            const myIters = this.computeChunk(0..#(this.resultCacheDom.size-1), tid, numTasks);
+    //if (verbose) then
+        writeln("task ", tid, " owns ", myIters,"===================");
+        for i in myIters do
+            yield this.resultCache[i+1];
+        }
+   }
+//Copied from chapel example
+ proc computeChunk(r: range, myChunk, numChunks) where r.stridable == false {
+  const numElems = r.length;
+  const elemsPerChunk = numElems/numChunks;
+  const mylow = r.low + elemsPerChunk*myChunk;
+  if (myChunk != numChunks - 1) {
+    return mylow..#elemsPerChunk;
+  } else {
+    return mylow..r.high;
+  }
+}
+
+
+
 
     /*
     `next` increses the cursor position.
