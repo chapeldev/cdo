@@ -18,6 +18,9 @@ delete_pg_ex:
 model_pg_ex:
 	chpl -o ./bin/model_pg_ex ./examples/model_pg_ex.chpl  -M ./src -I/usr/include/postgresql/
 
+parallel:
+	chpl -o ./bin/parallel ./examples/parallel.chpl  -M ./src -I/usr/include/postgresql/
+
 array_agg_pg:
 	chpl -o ./bin/array_agg_pg ./examples/array_agg_pg.chpl  -M ./src -I/usr/include/postgresql/
 
