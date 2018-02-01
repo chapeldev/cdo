@@ -12,6 +12,7 @@ proc main(){
     type MyTuple =(string,string); 
     var data:[{1..0}]MyTuple;
 // Data to be stored
+
     data.push_back(("John","john@email.co"));
     data.push_back(("Mary","marry@email.co"));
     data.push_back(("Paul","paul@email.co"));
