@@ -26,8 +26,10 @@ module Postgres{
 
 
 proc PgConnectionFactory(host:string, user:string="", database:string="", passwd:string=""):Connection{
-
-  return new Connection(new PgConnection(host, user, database, passwd));
+    
+    var con:Connection;
+    con = new Connection(new PgConnection(host, user, database, passwd));
+    return con;
 }
 
 class PgConnection:ConnectionBase{
@@ -197,6 +199,8 @@ class PgCursor:CursorBase{
    var numRows:int(32);
    var curRow:int(32)=0;
 
+   var execLock$:sync bool=true;
+
     
 
    proc PgCursor(con:PgConnection, pgcon:c_ptr(PGconn)){
@@ -270,7 +274,7 @@ class PgCursor:CursorBase{
    
 
     proc rowcount():int(32){
-        return this.numRows;
+        return this.numRows-1;
     }
 
 
@@ -284,6 +288,7 @@ class PgCursor:CursorBase{
     }
 
     proc execute(query:string, params){
+        this.execLock$;
         try{
             //This is not a code art.
             if(isTuple(params)){
@@ -317,6 +322,7 @@ class PgCursor:CursorBase{
         }catch{
             writeln("Error");
         }
+        this.execLock$=true;
     }
     proc execute(query:string){
         this.res = PQexec(this.pgcon, query.localize().c_str());
@@ -346,6 +352,7 @@ class PgCursor:CursorBase{
     }
 
     proc query(query:string){
+        this.execLock$;
           this.res = PQexec(this.pgcon, query.localize().c_str());
         if (PQresultStatus(res) != PGRES_TUPLES_OK)
         {
@@ -370,6 +377,7 @@ class PgCursor:CursorBase{
         this.numRows =PQntuples(res):int(32);
         this.curRow=0;
         this.resultCached=false;
+        this.execLock$=true;
         //return this.numRows;
    }
 

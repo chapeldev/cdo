@@ -41,7 +41,7 @@ proc main(){
    
 
 
-    var t3= getCurrentTime(TimeUnits.milliseconds);
+    var t3 = getCurrentTime(TimeUnits.milliseconds);
 
     for row in cursor{
         writeln("name = ", row["name"]+" email = "+row["email"] );
@@ -52,6 +52,7 @@ proc main(){
     
     var t5= getCurrentTime(TimeUnits.milliseconds);
 
+    cursor.query("SELECT * FROM public.contacts");
     forall row in cursor{
          writeln("name = ", row["name"]+" email = "+row["email"] );
     }
@@ -62,6 +63,11 @@ proc main(){
     writeln("Serial time  ",tserial );
     writeln("Serial time  Cached ",tserial_cached );
     writeln("Parallel time   ",tparallel );
+
+
+    
+
+
 
 
     cursor.close();

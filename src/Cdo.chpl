@@ -1118,11 +1118,11 @@ pragma "no doc"
   
   //if (verbose) then
         var numTasks = here.maxTaskPar;
-        writeln("In these() standalone, creating ", numTasks, " tasks");
+        //writeln("In these() standalone, creating ", numTasks, " tasks");
         coforall tid in 0..#numTasks {
             const myIters = this.computeChunk(0..#(this.resultCacheDom.size-1), tid, numTasks);
     //if (verbose) then
-        writeln("task ", tid, " owns ", myIters,"===================");
+        //writeln("task ", tid, " owns ", myIters,"===================");
         for i in myIters do
             yield this.resultCache[i+1];
         }
