@@ -274,7 +274,7 @@ class PgCursor:CursorBase{
    
 
     proc rowcount():int(32){
-        return this.numRows-1;
+        return this.numRows;
     }
 
 

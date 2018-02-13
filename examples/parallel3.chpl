@@ -12,7 +12,19 @@ proc main(){
         var cursor = con.cursor();
 
    
-            cursor.query("SELECT * FROM public.contacts LIMIT 2");
+            cursor.query("SELECT * FROM public.contacts LIMIT 10");
+
+          //Serial
+          var i: int = 0;
+  writeln("=== FOR LOOP ===");
+  for row in cursor {
+    writeln("from: ", row["name"], "\tto: ", row["email"]);
+    i += 1;
+  }
+  writeln("Expected 10 rows, got ", i, " and returnd from db ",cursor.rowcount());
+
+
+
    
             var t5= getCurrentTime(TimeUnits.milliseconds);
             
