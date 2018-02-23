@@ -24,6 +24,8 @@ parallel2:
 	chpl -o ./bin/parallel2 ./examples/parallel2.chpl  -M ./src -I/usr/include/postgresql/
 parallel3:
 	chpl -o ./bin/parallel3 ./examples/parallel3.chpl  -M ./src -I/usr/include/postgresql/
+parallel4:
+	chpl -o ./bin/parallel4 ./examples/parallel4.chpl  -M ./src -I/usr/include/postgresql/
 
 array_agg_pg:
 	chpl -o ./bin/array_agg_pg ./examples/array_agg_pg.chpl  -M ./src -I/usr/include/postgresql/

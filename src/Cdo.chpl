@@ -1125,10 +1125,48 @@ pragma "no doc"
         //writeln("task ", tid, " owns ", myIters,"===================");
           for i in myIters do{
             //writeln("iterator ", i);
+            //var myrang = myIters.translate(1);
             yield this.resultCache[i+1];
           }
         }
    }
+
+iter these(param tag: iterKind)
+  where tag == iterKind.leader {
+        
+        var verbose=false;
+        var numTasks = here.maxTaskPar;
+
+        if(!this.resultCached){ // Creates a cache
+            this.resultCacheDom.clear();
+            
+            for row in this.fetchall(){
+                this.resultCache.push_back(row);
+            }
+            this.resultCached=true;
+        }
+
+  
+ 
+
+  coforall tid in 0..#numTasks {
+    const myIters = this.computeChunk(0..#this.resultCacheDom.size, tid, numTasks);
+  
+    yield (myIters,);
+  }
+}
+
+iter these(param tag: iterKind, followThis)
+       where tag == iterKind.follower && followThis.size == 1 {
+
+    const lowBasedIters = followThis(1);
+
+    for i in lowBasedIters do{
+            yield this.resultCache[i+1];
+    }
+}
+
+
 //Copied from chapel example
  proc computeChunk(r: range, myChunk, numChunks) where r.stridable == false {
   const numElems = r.length;
