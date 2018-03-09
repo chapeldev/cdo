@@ -1,7 +1,8 @@
 
 [brick]
 name = "Cdo"
-version = "0.1.0"
+version = "0.1.1"
 chplVersion = "1.16.0"
 authors = ["Marcos Cleison Silva Santana <marcoscleison@gmail.com>"]
+source = "https://github.com/buddha314/cdo"
 [dependencies]
