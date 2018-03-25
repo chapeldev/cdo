@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Marcos Cleison Silva Santana
+ * Copyright (C) 2017-2018 Marcos Cleison Silva Santana
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,8 @@ class SqliteConnection:ConnectionBase{
 
      proc SqliteConnection(database:string=""){
         try{
-            //this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
-           // writeln("conecting to ",this.dsn);
-            sqlite3_open("teste.db", this.conn);
+            
+            sqlite3_open(database, this.conn);
 
 	        if (this.conn == c_nil)
 	        {
@@ -53,9 +52,6 @@ class SqliteConnection:ConnectionBase{
         return this.conn;    
     }
 
-    proc helloWorld(){
-        writeln("Hello from SqliteConnection");
-    }
 
     proc cursor(){
         return new Cursor(new SqliteCursor(this,this.conn));
@@ -104,9 +100,7 @@ class SqliteConnection:ConnectionBase{
 
     }
 
-    proc __registerTypes(){
-     
-    }
+    
 
 }
 
@@ -114,7 +108,7 @@ class SqliteCursor:CursorBase{
     
    var con:SqliteConnection;
    var sqlitecon:c_ptr(sqlite3);
-   //var res:c_ptr(PGresult);
+   
    var stmt:c_ptr(sqlite3_stmt);
    
    var nFields:int(32);
@@ -160,6 +154,7 @@ class SqliteCursor:CursorBase{
         
         this.__removeColumns();
         this.nFields = sqlite3_column_count(this.stmt):int(32);
+
         var ii:int(32)=0;
 
         while ( ii < nFields){    
@@ -196,14 +191,10 @@ class SqliteCursor:CursorBase{
             writeln("Error");
         }
         
-        
-        //for p in pr{
-            //writeln(p);
-        //}
     }
 
     proc fetchrow(idx:int):Row{
-       //todo 
+        
         var row = new Row();
        
         return row;

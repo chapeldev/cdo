@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Marcos Cleison Silva Santana
+ * Copyright (C) 2016-2018 Marcos Cleison Silva Santana
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,20 @@ module Postgres{
     use PostgresNative;
     use IO.FormattedIO;
     use Types;
+    //use CDOQueryBuilder; // This is disabled for now.
+    //use CDOQueryBuilderPostgres;
 
     require "libpq-fe.h","-lpq";
     require "stdio.h";
 
 
 proc PgConnectionFactory(host:string, user:string="", database:string="", passwd:string=""):Connection{
-    
     var con:Connection;
     con = new Connection(new PgConnection(host, user, database, passwd));
     return con;
 }
 
 class PgConnection:ConnectionBase{
-
      var dsn:string;
      var conn:c_ptr(PGconn);
     // var mapperDom:domain(string); //When I declare this the compiler says that there is an error
@@ -42,7 +42,7 @@ class PgConnection:ConnectionBase{
      proc PgConnection(host:string, user:string="", database:string="", passwd:string=""){
         try{
             this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
-           // writeln("conecting to ",this.dsn);
+          
             this.conn = PQconnectdb(this.dsn.localize().c_str());
             if (PQstatus(conn) != CONNECTION_OK)
             {
@@ -75,7 +75,7 @@ class PgConnection:ConnectionBase{
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
         {
             //Todo: Improve error messages
-             //PQerrorMessage(conn));
+             
             PQclear(res);
 
             halt("error");
@@ -114,74 +114,17 @@ class PgConnection:ConnectionBase{
         PQfinish(this.conn);
     }
 
-    proc table(table:string):QueryBuilder{
+    /*proc table(table:string):QueryBuilder{
         return new QueryBuilder(new PgQueryBuilder(this,table));
-    }
+    }*/
 
-    proc model():ModelEngine{
+    // I am letting this for the next release 
+    /*proc model():ModelEngine{
         var engine = new ModelEngine(new Connection(this));
         return engine;
-    }
+    }*/
 
-    proc __registerTypes(){
-       /* this.__registerTypeName(20, "int"); // int8
-        this.__registerTypeName(21, "int"); // int2
-        this.__registerTypeName(23, "int"); // int4
-        this.__registerTypeName(26, "int"); // oid
-        this.__registerTypeName(700, "real"); // float4/real
-        this.__registerTypeName(701, "real"); // float8/double
-        this.__registerTypeName(16, "bool");
-        this.__registerTypeName(1082, "date"); // date
-        this.__registerTypeName(1114, "date"); // timestamp without timezone
-        this.__registerTypeName(1184, "date"); // timestamp
-        this.__registerTypeName(600, "point"); // point
-        this.__registerTypeName(651, "string-array"); // cidr[]
-        this.__registerTypeName(718, "string"); // circle
-        this.__registerTypeName(1000, "bool-Array");
-        this.__registerTypeName(1001, "string-Array");
-        this.__registerTypeName(1005, "int-array"); // _int2
-        this.__registerTypeName(1007, "int-array"); // _int4
-        this.__registerTypeName(1028, "int-array"); // oid[]
-        this.__registerTypeName(1016, "integer-array"); // _int8
-        this.__registerTypeName(1017, "point-array"); // point[]
-        this.__registerTypeName(1021, "real-array"); // _float4
-        this.__registerTypeName(1022, "real-array"); // _float8
-        this.__registerTypeName(1231, "real-array"); // _numeric
-        this.__registerTypeName(1014, "string-array"); //char
-        this.__registerTypeName(1015, "string-array"); //varchar
-        this.__registerTypeName(1008, "string-array");
-        this.__registerTypeName(1009, "string-array");
-        this.__registerTypeName(1040, "string-array"); // macaddr[]
-        this.__registerTypeName(1041, "string-array"); // inet[]
-        this.__registerTypeName(1115, "date-array"); // timestamp without time zone[]
-        this.__registerTypeName(1182, "date-array"); // _date
-        this.__registerTypeName(1185, "date-array"); // timestamp with time zone[]
-        this.__registerTypeName(1186, "range");
-        this.__registerTypeName(17, "string");
-        this.__registerTypeName(114, "json"); // json
-        this.__registerTypeName(3802, "json"); // jsonb
-        this.__registerTypeName(199, "json-array"); // json[]
-        this.__registerTypeName(3807, "json-array"); // jsonb[]
-        this.__registerTypeName(3907, "string-array"); // numrange[]
-        this.__registerTypeName(2951, "string-array"); // uuid[]
-        this.__registerTypeName(791, "string-array"); // money[]
-        this.__registerTypeName(1183, "string-array"); // time[]
-        this.__registerTypeName(1270, "string-array"); // timetz[]
-        */
-
-    }
-
-   /* proc __registerTypeName(oid:int, cdo_type:string){
-        //this.__type_mapper[oid:string]= cdo_type;
-    }
-    proc __typeToString(oid:Oid):string{
-        //return this.__type_mapper[oid:string];
-    }
-    */
-    proc dumpt(){
-       
-        
-    }
+   
 
 }
 
@@ -308,7 +251,7 @@ class PgCursor:CursorBase{
             }
             if(isArray(params)){   
                 for p in params{
-                    //writeln("params = ",p);
+                    
                     if(isTuple(p)){
                         this.execute(query.format((...p)));
                     }else{
@@ -324,6 +267,7 @@ class PgCursor:CursorBase{
         }
         this.execLock$=true;
     }
+
     proc execute(query:string){
         this.res = PQexec(this.pgcon, query.localize().c_str());
         if (PQresultStatus(res) !=  PGRES_COMMAND_OK)
@@ -361,7 +305,7 @@ class PgCursor:CursorBase{
             PQclear(res);
             PQfinish(this.pgcon);       
             halt("Error");
-            //return -1;
+            
         }
 
         this.__removeColumns();
@@ -378,7 +322,7 @@ class PgCursor:CursorBase{
         this.curRow=0;
         this.resultCached=false;
         this.execLock$=true;
-        //return this.numRows;
+        
    }
 
     proc query(query:string, params){
@@ -409,11 +353,7 @@ class PgCursor:CursorBase{
             j=0;
             while(j < this.nFields){
                 row = new string(PQgetvalue(res, i:c_int, j:c_int):c_string);
-
-            // printf("\t%s".localize().c_str(),PQgetvalue(res,  i:c_int, j:c_int));
                 write("\t",row);
-           //write("\t",PQgetvalue(res,  i:c_int, j:c_int):string);
-           
                 j+=1;
             }       
             writeln("\n");
@@ -444,7 +384,7 @@ class PgCursor:CursorBase{
         while(j < this.nFields){
                 var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
                 var colinfo = this.getColumnInfo(j);
-                //this.__addColumn(ii,colname, coltype );
+                
                 row.addData(colinfo.name,datum,colinfo.coltype);
                 j += 1;
         }
@@ -472,39 +412,7 @@ class PgCursor:CursorBase{
         }
     }
 
-  /*  iter these(param tag: iterKind)ref:Row 
-        where tag == iterKind.standalone {
-  
-        if(!this.resultCached){ // Creates a cache
-            this.resultCacheDom.clear();
-            
-            for row in this.fetchall(){
-                this.resultCache.push_back(row);
-            }
-            this.resultCached=true;
-        }
-  
-  //if (verbose) then
-        var numTasks = here.maxTaskPar;
-        writeln("In these() standalone, creating ", numTasks, " tasks");
-        coforall tid in 0..#numTasks {
-            const myIters = this.computeChunk(0..#(this.resultCacheDom.size-1), tid, numTasks);
-    //if (verbose) then
-        writeln("task ", tid, " owns ", myIters);
-        for i in myIters do
-            yield this.resultCache[i+1];
-        }
-   }
-*/
-  
-
-
-
-
-
-
-
-    proc fetchone():Row{
+     proc fetchone():Row{
         if(this.curRow==this.numRows){
            return nil;
         }
@@ -692,415 +600,6 @@ class PgCursor:CursorBase{
         this.execute(sql);
         return sql;
     }
-}
-
-class PgQueryBuilder: QueryBuilderBase{
-   var sql:string="";
-   var conn:PgConnection;
-   var cursor:Cursor;
-   //var table:string;
-
-   var _orderby_declared:bool=false;
-   var _operation_type:string;
-
-   proc PgQueryBuilder(con:PgConnection, table:string){
-       this.conn = con;       
-       this.From(table);
-       this.table=table;
-       this.cursor = con.cursor();
-   }
-
-   iter Get():Row{
-    this.cursor.query(this.compileSql());
-
-        var res:Row = this.cursor.fetchone();
-        while(res!=nil){
-            yield res;
-            res = this.cursor.fetchone();
-        }
-
-    //yield this.cursor.fetchone();     
-   }
-
-   proc getOneAsRecord(ref obj:?eltType):eltType{
-       //writeln(this.toSql());
-        //this.cursor.query(this.compileSql());
-        if(this.cursor.fetchAsRecord(obj) != nil){
-            return obj;
-        }
-        return nil;
-   }
-
-   proc Query(){
-        this.cursor.query(this.compileSql());
-       return this;
-   }
-
-   proc QueryAndGetCursor():Cursor{
-       return this.cursor;
-   }
-
-   proc Exec(){
-       this.cursor.execute(this.compileSql());
-   }
-   /*proc GetAsArray(){
-      var data:[{1..0}]Row;
-      this.cursor.query(this.toSql());
-      for row in this.cursor.fetchall(){
-          data.push_back(row);
-      }
-
-    return data;
-   }*/
-
-    proc toSql():string{
-        //this.compileSql();
-        return this.sql;
-    }
-   proc compileSql():string{
-       if(this._has("select")){
-           this._operation_type="select";
-           this._compileSelect();
-           //return this.sql;
-       }else if(this._has("insert")){
-           this._operation_type="insert";
-           this._compileInsert();
-           //return this.sql;
-       }else if(this._has("update")){
-           this._operation_type="update";
-           this._compileUpdate();
-           //return this.sql;
-       }else if(this._has("delete")){
-           this._operation_type="delete";
-           this._compileDelete();
-          /// return this.sql;
-       }/*else if(this._has("where")){
-           this._operation_type="where";
-           this._compileWhere();
-           return this.sql;
-       }*/
-       else{
-       }
-       return this.sql;
-   }
-
-   proc clear(){
-        this.sql="";
-        this._statements_dim.clear();
-        this.From(this.table); 
-   }
-
-    proc Count():int{
-        var col = "COUNT(*) AS count_all";
-        this.Select([col]);
-        this.cursor.query(this.compileSql());
-        var row = this.cursor.fetchone();
-        return row["count_all"]:int; 
-    }
-    proc Count(colname:string){
-        var alias_colname = colname.replace(".","_");
-        var col = "COUNT("+this.__quote_columns(colname)+") AS count_"+alias_colname;
-        this.Select([col]);
-        this.cursor.query(this.compileSql());
-        var row = this.cursor.fetchone();
-        return row["count_"+alias_colname]:int;
-    }
-
-    proc Max(colname:string):real{ 
-        var alias_colname = colname.replace(".","_");
-        var prefix="max_";
-        var col = "MAX("+this.__quote_columns(colname)+") AS "+prefix+alias_colname;
-        this.Select([col]);
-        this.cursor.query(this.compileSql());
-        var row = this.cursor.fetchone();
-        return row[prefix+alias_colname]:real;
-    }
-
-    proc Min(colname:string):real{ 
-        var alias_colname = colname.replace(".","_");
-        var prefix="min_";
-        var col = "MIN("+this.__quote_columns(colname)+") AS "+prefix+alias_colname;
-        this.Select([col]);
-        this.cursor.query(this.compileSql());
-        var row = this.cursor.fetchone();
-        return row[prefix+alias_colname]:real;
-    }
-    proc Avg(colname:string):real{ 
-        var alias_colname = colname.replace(".","_");
-        var prefix="avg_";
-        var col = "AVG("+this.__quote_columns(colname)+") AS "+prefix+alias_colname;
-        this.Select([col]);
-        this.cursor.query(this.compileSql());
-        var row = this.cursor.fetchone();
-        return row[prefix+alias_colname]:real;
-    }
-
-    proc Insert(data:[?D]string, exclude_column:string="id"){
-        if(D.member(exclude_column)){
-            D.remove(exclude_column);
-        }
-        this.cursor.insert(this.table,data);
-        return this;
-    }
-    proc Insert(ref data:?eltType, exclude_column:string="id"){
-        //this.cursor.insert(this.table,cdoObjToArray(data));
-        return this.Insert(cdoObjToArray(data),exclude_column);
-    }
-    
-    proc Update( data:[?D]string, cond_column:string, id:string){
-        var col = this.__quote_columns(cond_column);
-        var val = this.__quote_values(id);
-        this.cursor.update(this.table, col+" = "+val, data);
-
-        return this;
-    }
-
-    proc Update(ref data:?eltType, cond_column:string, id:string){
-        return this.Update(cdoObjToArray(data),cond_column,id);
-    }
-
-    /*proc BelongsTo(data:[?D]string, table:string, local_key:string, foreign_key:string = "id"){
-        var qb = this.conn.table(table);
-        return qb.Select().Where(foreign_key, data[local_key]); 
-    }
-    proc BelongsTo(obj:?eltType, table:string, local_key:string, foreign_key:string = "id"){
-        var qb = this.conn.table(table);
-        var data = cdoObjToArray(obj);
-        return qb.Select().Where(foreign_key, data[local_key]); 
-    }*/
-
-   proc __arrayToString(arr, delimiter:string=", "):string{
-        return delimiter.join(arr);
-    }
-
-    proc __quote_columns(colname:string):string{
-        if(colname=="*"){
-            return "*";
-        }
-        if(colname.find(".")>0){
-            var parts = colname.split(".");
-            var last_idx = parts.domain.last;
-            parts[last_idx] = this.__quote_columns(parts[last_idx]);
-            return ".".join(parts);
-        }
-        return "\""+colname+"\"";
-    }
-    proc __quote_values(value:string):string{
-        return "'"+value+"'";
-    }
-
-    proc __contaisAggregateFunctions(code):bool{
-        var aggegates:[{1..0}]string;
-            aggegates.push_back("COUNT");
-            aggegates.push_back("MAX");
-            aggegates.push_back("MIN");
-            aggegates.push_back("AVG");
-            aggegates.push_back("SUM");
-        
-        for f in aggegates{
-
-            if(code.find(f)>0){
-                return true;
-            }
-        }
-        return false;
-    }
-    proc __preprocessColumnAlias(code):string{
-
-        if(code.find(" AS ")>0){
-            var chunk:[1..0]string;
-            var i = 0;
-            for part in code.split(" AS "){
-                  if(i == 0){
-                      //writeln("column: ",part," Contains "+this.__contaisAggregateFunctions(part));
-                      if(this.__contaisAggregateFunctions(part)){
-                          chunk.push_back(part);
-                      }else{
-                          chunk.push_back(this.__quote_columns(part));
-                      }
-                  }else{
-                      chunk.push_back(this.__quote_columns(part));
-                  }
-                  i += 1;
-            }
-            return " AS ".join(chunk); 
-        }
-
-        return this.__quote_columns(code);
-    }
-   proc _compileSelect(){
-
-       this.sql +="SELECT ";
-       var dados = this._get("select").getData();
-       for col in dados{
-           col = this.__preprocessColumnAlias(col);
-       }
-
-       var cols = this.__arrayToString(dados);
-
-       this.sql += cols;
-        if(this._has("table")){
-            var table = this._get("table");
-            this.sql += " FROM "+table[1]+" ";
-        }
-        if(this._has("join")){
-            this._compileJoin();
-        }
-        if(this._has("where")){
-            this._compileWhere();
-        }
-        if(this._has("orderByAsc")){
-            this._compileOrderByAsc();
-        }
-        if(this._has("orderByDesc")){
-            this._compileOrderByDesc();
-        }
-        if(this._has("groupBy")){
-            this._compileGroupBy();
-        }
-        if(this._has("limit")){
-            this._compileLimit();
-        }
-        if(this._has("offset")){
-            this._compileOffset();
-        }
-   }//end 
-   proc _compileWhere(){
-       if(this._has("where")){
-          var wopcodes =  this._get("where").getWhereData();
-          var i:int = 0;
-            this.sql += " WHERE ";
-            try{
-                for op in wopcodes{
-                    if(i == 0){
-                        if(op[2]=="IN"||op[2]=="NOT IN"){
-                            
-                            this.sql += " (%s %s %s) ".format(this.__quote_columns(op[1]),op[2],this.__quote_values(op[3]));
-                        }else{
-                            this.sql += " (%s %s %s) ".format(this.__quote_columns(op[1]),op[2], this.__quote_values(op[3]));
-                        }
-                    }else{
-                        if(op[2] == "IN"||op[2]=="NOT IN"){
-
-                        }else{
-                            
-                        }
-                        this.sql += " %s (%s %s %s) ".format(op[4], this.__quote_columns(op[1]), op[2], this.__quote_values(op[3]));
-                    }
-                    i += 1;
-                }
-            }catch{
-                writeln("Error where");
-            }
-        }
-        
-
-   }//end
-
-   proc _compileJoin(){
-       if(this._has("join")){
-          var wopcodes =  this._get("join").getWhereData();
-          var i:int = 0;
-            
-            try{
-                for op in wopcodes{                    
-                    this.sql += " %s JOIN %s ".format(op[5],op[1]);
-                    this.sql += " ON %s %s %s ".format(this.__quote_columns(op[2]),op[3],this.__quote_columns(op[4]));
-                }            
-            }catch{
-                writeln("Error where");
-            }
-       }    
-   }//end
-
-    proc _compileOrderByAsc(){
-
-        if(!this._orderby_declared){
-            this.sql += " ORDER BY ";
-            this._orderby_declared = true;
-        }else{
-           this.sql += ", ";
- 
-        }
-
-        if(this._has("orderByAsc")){
-            try{
-            var columns =  this._get("orderByAsc").getData();
-            
-            this.sql += " "+(", ".join(columns));
-            }catch{
-                writeln("Error order by asc");
-            }
-        }
-    }
-
-    proc _compileOrderByDesc(){
-        if(!this._orderby_declared){
-            this.sql += " ORDER BY ";
-            this._orderby_declared=true;
-        }else{
-            this.sql += ", ";
-        }
-
-        if(this._has("orderByDesc")){
-            try{
-            var columns =  this._get("orderByDesc").getData();
-            this.sql += (" DESC, ".join(columns))+" DESC ";
-            }catch{
-                writeln("Error order by desc");
-            }
-        }
-    }
-    proc _compileGroupBy(){
-        if(this._has("groupBy")){
-            try{
-                var columns =  this._get("groupBy").getData();
-                this.sql += " GROUP BY "+(",".join(columns))+" ";
-            }catch{
-                writeln("Error order by desc");
-            }
-        }
-    }//end
-
-    proc _compileLimit(){
-        if(this._has("limit")){
-            try{
-                var value =  this._get("limit").getData();
-                this.sql += " LIMIT "+value[1]+" ";
-            }catch{
-                writeln("Error LIMIT");
-            }
-        }
-    }
-
-    proc _compileOffset(){
-        if(this._has("offset")){
-            try{
-                var value =  this._get("offset").getData();
-                this.sql += " OFFSET "+value[1]+" ";
-            }catch{
-                writeln("Error offset");
-            }
-        }
-    }//end
-
-    proc _compileInsert(){
-
-    }//end
-    proc _compileUpdate(){
-
-    }//end
-    proc _compileDelete(){
-
-        if (this._has("delete")) {
-
-            this.sql = "DELETE FROM "+this.table+" ";
-            if (this._has("delete")) {
-                this._compileWhere();
-            }
-        }
-    }//end
-
 }
 
 

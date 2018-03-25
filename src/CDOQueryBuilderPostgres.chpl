@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module Mysql_query_builder{
+module CDOQueryBuilderPostgres{
 use Cdo;
-use Mysql;
+use Postgres;
+use CDOModelEngine;
+use CDOQueryBuilder;
 
 
-class MySqlQueryBuilder:QueryBuilderBase{
+class PgQueryBuilder: QueryBuilderBase{
    var sql:string="";
-   var conn:MysqlConnection;
+   var conn:PgConnection;
    var cursor:Cursor;
    //var table:string;
 
    var _orderby_declared:bool=false;
    var _operation_type:string;
-   proc MySqlQueryBuilder(con:MysqlConnection, table:string){
+
+   proc PgQueryBuilder(con:PgConnection, table:string){
        this.conn = con;       
        this.From(table);
        this.table=table;
@@ -114,22 +117,33 @@ class MySqlQueryBuilder:QueryBuilderBase{
    }
 
     proc Count():int{
+        try{
         var col = "COUNT(*) AS count_all";
         this.Select([col]);
         this.cursor.query(this.compileSql());
         var row = this.cursor.fetchone();
-        return row["count_all"]:int; 
+        return row["count_all"]:int;
+        }catch{
+            writeln("Error:[proc Count], Cannot convert value or grab it.");
+            return -1;
+        } 
     }
     proc Count(colname:string){
+        try{
         var alias_colname = colname.replace(".","_");
         var col = "COUNT("+this.__quote_columns(colname)+") AS count_"+alias_colname;
         this.Select([col]);
         this.cursor.query(this.compileSql());
         var row = this.cursor.fetchone();
         return row["count_"+alias_colname]:int;
+        }catch{
+            writeln("Error:[proc Count], Cannot convert value or grab it.");
+            return -1;
+        }
     }
 
     proc Max(colname:string):real{ 
+        try{
         var alias_colname = colname.replace(".","_");
         var prefix="max_";
         var col = "MAX("+this.__quote_columns(colname)+") AS "+prefix+alias_colname;
@@ -137,9 +151,14 @@ class MySqlQueryBuilder:QueryBuilderBase{
         this.cursor.query(this.compileSql());
         var row = this.cursor.fetchone();
         return row[prefix+alias_colname]:real;
+        }catch{
+            writeln("Error:[proc Max], Cannot convert value or grab it.");
+            return 0.0;
+        }
     }
 
     proc Min(colname:string):real{ 
+        try{
         var alias_colname = colname.replace(".","_");
         var prefix="min_";
         var col = "MIN("+this.__quote_columns(colname)+") AS "+prefix+alias_colname;
@@ -147,8 +166,13 @@ class MySqlQueryBuilder:QueryBuilderBase{
         this.cursor.query(this.compileSql());
         var row = this.cursor.fetchone();
         return row[prefix+alias_colname]:real;
+        }catch{
+            writeln("Error:[proc Min], Cannot convert value or grab it.");
+            return 0.0;
+        }
     }
     proc Avg(colname:string):real{ 
+        try{
         var alias_colname = colname.replace(".","_");
         var prefix="avg_";
         var col = "AVG("+this.__quote_columns(colname)+") AS "+prefix+alias_colname;
@@ -156,6 +180,10 @@ class MySqlQueryBuilder:QueryBuilderBase{
         this.cursor.query(this.compileSql());
         var row = this.cursor.fetchone();
         return row[prefix+alias_colname]:real;
+        }catch{
+            writeln("Error:[proc Avg], Cannot convert value or grab it.");
+            return 0.0;
+        }
     }
 
     proc Insert(data:[?D]string, exclude_column:string="id"){
@@ -206,7 +234,7 @@ class MySqlQueryBuilder:QueryBuilderBase{
             parts[last_idx] = this.__quote_columns(parts[last_idx]);
             return ".".join(parts);
         }
-        return ""+colname+"";
+        return "\""+colname+"\"";
     }
     proc __quote_values(value:string):string{
         return "'"+value+"'";
@@ -425,7 +453,6 @@ class MySqlQueryBuilder:QueryBuilderBase{
     }//end
 
 }
-
 
 
 }

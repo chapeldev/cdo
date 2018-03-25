@@ -26,7 +26,7 @@ proc main(){
                
             }
 
-            writeln("Looped over ",j," records");
+            writeln("Looped over ",jj," records");
             writeln("Database returned ",cursor.rowcount()," records");
 
 
