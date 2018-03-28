@@ -51,7 +51,7 @@ class PgConnection:ConnectionBase{
                 PQfinish(conn);
                 halt("Error");
             }
-            this.__registerTypes();
+            
         }catch{
                 writeln("Postgres Connection to database exception");
         }
