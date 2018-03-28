@@ -224,3 +224,7 @@ writeln("end");
 # Warning
 
 This library is very alpha and incomplete. Please, consider that we are in early stage and many functions and features are not implemented yet.
+
+## Version v0.1.1
+
+Not quite production ready, but close
