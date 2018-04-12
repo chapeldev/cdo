@@ -231,7 +231,7 @@ class PgCursor:CursorBase{
     }
 
     proc execute(query:string, params){
-        //this.execLock$;
+        this.execLock$;
         try{
             //This is not a code art.
             if(isTuple(params)){
@@ -265,7 +265,7 @@ class PgCursor:CursorBase{
         }catch{
             writeln("Error");
         }
-        //this.execLock$=true;
+        this.execLock$=true;
     }
 
     proc execute(query:string){
