@@ -16,6 +16,8 @@ proc main(){
 
           //Serial
           var i: int = 0;
+
+
   writeln("=== FOR LOOP ===");
   /*for row in cursor {
     writeln("from: ", row["name"], "\tto: ", row["email"]);
@@ -23,15 +25,23 @@ proc main(){
   }*/
   //writeln("Expected  rows, got ", i, " and returnd from db ",cursor.rowcount());
 
-
-
-   
             var t5= getCurrentTime(TimeUnits.milliseconds);
             
             var jj:int=0;
+
+            var n=cursor.rowcount():int;
+
+            var data:[{1..#n}](string,string,string);
+
             forall row in cursor with (ref jj){
-                writeln(row["id"]," name = ", row["name"]+" email = "+row["email"] );
                 jj+=1;
+                writeln(jj,"=>",row["id"]," name = ", row["name"]+" email = "+row["email"] );
+                
+                data[jj]=(row["id"],row["name"],row["email"]);
+            }
+
+            for el in data{
+              writeln("*",el);
             }
 
             writeln("Looped over ",jj," records");
