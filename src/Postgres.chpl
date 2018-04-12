@@ -231,15 +231,15 @@ class PgCursor:CursorBase{
     }
 
     proc execute(query:string, params){
-        this.execLock$;
+        
         try{
             //This is not a code art.
             if(isTuple(params)){
                 var isT =false;
                 for p in params{
-                    writeln("params = ",p);
+                    //writeln("params = ",p);
                     if(isTuple(p)){
-                        this.query(query,p);
+                        this.execute(query,p);
                         isT=true;
                     }
                   
@@ -249,26 +249,34 @@ class PgCursor:CursorBase{
                 }
 
             }
-            if(isArray(params)){   
+            if(isArray(params)){
+                var  batch:string="";   
                 for p in params{
                     
                     if(isTuple(p)){
-                        this.execute(query.format((...p)));
+                        //this.execute(query.format((...p)));
+                        batch += query.format((...p))+";\n";
                     }else{
-                        this.execute(query.format(p));
+                        //this.execute(query.format(p));
+                        batch += query.format((...p))+";\n";
                     }
+
                    
                 }
+                this.execute(batch);
+
             }
             
 
         }catch{
             writeln("Error");
         }
-        this.execLock$=true;
+        
     }
 
     proc execute(query:string){
+        this.execLock$;
+        
         this.res = PQexec(this.pgcon, query.localize().c_str());
         if (PQresultStatus(res) !=  PGRES_COMMAND_OK)
         {
@@ -293,6 +301,8 @@ class PgCursor:CursorBase{
         this.numRows =PQntuples(res):int(32);
         this.curRow=0;
         this.resultCached=false;
+
+        this.execLock$=true;
     }
 
     proc query(query:string){
