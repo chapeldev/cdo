@@ -33,6 +33,50 @@ proc PgConnectionFactory(host:string, user:string="", database:string="", passwd
     return con;
 }
 
+class PgParallelConnection{
+    
+    var host:string;
+    var user:string="";
+    var database:string=""; 
+    var passwd:string="";
+
+    proc init(host:string, user:string="", database:string="", passwd:string=""){
+        this.host=host;
+        this.user=user;
+        this.database=database;
+        this.passwd=passwd;
+    }
+
+    proc execute(query:string, data:[?D]?eltType){
+        const numCores = here.numPUs();
+        const connections = [1..numCores]  PgConnectionFactory(this.host,this.user,this.database,this.passwd);
+        const chunk_size:int = data.size/numCores;
+
+        coforall tid in 1..numCores {           
+                       //connections[tid]…
+            writeln("Connection ",tid);       
+            var istart = (chunk_size*tid);
+            var iend = (chunk_size*(tid+1));
+            if(iend>D.high){
+                iend=D.high;
+            }
+
+
+            var chunk = data[istart..iend];
+            var cursor = connections[tid].cursor();
+            cursor.execute(query,chunk);
+            cursor.close();
+            connections[tid].close();
+             writeln("End Connection ",tid);
+        }
+
+       
+    }
+
+}
+
+
+
 class PgConnection:ConnectionBase{
      var dsn:string;
      var conn:c_ptr(PGconn);

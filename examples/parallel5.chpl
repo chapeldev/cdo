@@ -3,11 +3,13 @@ use Cdo;
 use Postgres;
 use Time;
 proc main(){
-    //Open connection with Postgres database. Parametrs are host,username, database, password
-        var con = PgConnectionFactory("localhost", "postgres", "test", "password");
-        //Open a cursor
-        var cursor = con.cursor();
-      
+
+var pcon = new PgParallelConnection("localhost", "postgres", "test", "password");
+
+    
+
+
+
     // Type for single datum
     type DataTuple = 2*string;
 
@@ -19,7 +21,6 @@ proc main(){
     data[3]=("Paul","paul@email.co");
 
     var i=0;
-
     while(i<100000){
         writeln("Inserting I=",i);
         
@@ -28,28 +29,18 @@ proc main(){
     i+=1;
     }
 
-    var t: Timer; 
-            t.start(); 
-                cursor.execute("INSERT INTO public.contacts(\"name\",\"email\") VALUES ('%s','%s')",data);
-            t.stop();
+    var t:Timer;
 
-//Select 
+    t.start();
 
-    var t2: Timer; 
-            t2.start();
-    cursor.query("SELECT * FROM public.contacts");
-    //Get results
-    for row in  cursor{
-        writeln(row["name"],"  ", row["email"]);
-    }
+    pcon.execute("INSERT INTO public.contacts(\"name\",\"email\") VALUES ('%s','%s')",data);
+    
+    t.stop();
 
-    t2.stop();
+    writeln("Insert time ",t.elapsed());
 
-    writeln("Insert time", t.elapsed());
-    writeln("query time", t2.elapsed());
-
-    cursor.close();
-    con.close();
-    writeln("End");
+    
   }
+
+
 }
