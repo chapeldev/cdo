@@ -54,9 +54,9 @@ class PgParallelConnection{
 
         coforall tid in 1..numCores {           
                        //connections[tid]…
-            writeln("Connection ",tid);       
-            var istart = (chunk_size*tid);
-            var iend = (chunk_size*(tid+1));
+            //writeln("Connection ",tid);       
+            var istart = (chunk_size*(tid-1)+1);
+            var iend = (chunk_size*tid);
             if(iend>D.high){
                 iend=D.high;
             }
@@ -67,7 +67,7 @@ class PgParallelConnection{
             cursor.execute(query,chunk);
             cursor.close();
             connections[tid].close();
-             writeln("End Connection ",tid);
+             //writeln("End Connection ",tid);
         }
 
        
