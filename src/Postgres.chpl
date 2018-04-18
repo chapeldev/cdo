@@ -70,7 +70,7 @@ class PgParallelConnection{
             cursor.execute(query,chunk);
             cursor.close();
             connections[tid].close();
-             writeln("End Connection ",tid);
+             //writeln("End Connection ",tid);
         }
 
 
