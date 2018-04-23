@@ -32,8 +32,8 @@ var pcon = new PgParallelConnection("localhost", "postgres", "test", "password")
     var t:Timer;
 
     t.start();
-
-    pcon.execute("INSERT INTO public.contacts(\"name\",\"email\") VALUES ('%s','%s')",data);
+    var cols:[1..2]string=["name","email"];
+    pcon.insertTuples("public.contacts",cols,data);
     
     t.stop();
 
