@@ -54,9 +54,9 @@ class PgParallelConnection{
 
         coforall tid in 1..numCores {           
                        //connections[tid]…
-            writeln("Connection ",tid);       
-            var istart = (chunk_size*tid);
-            var iend = (chunk_size*(tid+1));
+            //writeln("Connection ",tid);       
+            var istart = (chunk_size*(tid-1)+1);
+            var iend = (chunk_size*tid);
             if(iend>D.high){
                 iend=D.high;
             }
@@ -74,30 +74,29 @@ class PgParallelConnection{
     proc insertTuples(table:string,columns:[?D]string,data:[?D2]?eltType){
         const numCores = here.numPUs();
         const connections = [1..numCores]  PgConnectionFactory(this.host,this.user,this.database,this.passwd);
-        const chunk_size:int = 1 + data.size/numCores;;
+        const chunk_size:int =  1+data.size/numCores;
         coforall tid in 1..numCores {       
             var cols:string;
             var datastmt:string;
+            var istart = (chunk_size*(tid-1)+1);
+            var iend = (chunk_size*(tid));
 
-            
-
-            var istart = (chunk_size*tid);
-            var iend = (chunk_size*(tid+1));
-            if(iend>D.high){
-                iend=D.high;
+            if(iend>D2.high){
+                iend=D2.high;
+                
             }
-
             var chunk = data[istart..iend];
-            
-            
-            (cols,datastmt)= this.__tupleToStatement(columns,data);
+            (cols,datastmt)= this.__tupleToStatement(columns,chunk);
             var cursor = connections[tid].cursor();
-            var query= "insert into "+table+""+cols+" VALUES "+datastmt;
-            writeln(query);
+            var query= "insert into "+table+""+cols+" VALUES "+datastmt+";";
             cursor.execute(query);
             cursor.close();
-            connections[tid].close();
         }
+
+        for tid in 1..numCores {
+            connections[tid].close();
+        }       
+ 
     }
     proc __tupleToStatement(columns:[?D]string,data:[?D2]?eltType):(string,string){
         var cols:string = "("+(",".join(columns))+")";
