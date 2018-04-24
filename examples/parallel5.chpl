@@ -14,16 +14,12 @@ var pcon = new PgParallelConnection("localhost", "postgres", "test", "password")
     type DataTuple = 2*string;
 
 // Array of data
-    var data:[{1..3}]DataTuple;
+    var data:[{1..0}]DataTuple;
 // Data to be stored
-    data[1]=("John","john@email.co");
-    data[2]=("Mary","marry@email.co");
-    data[3]=("Paul","paul@email.co");
-
+    
     var i=0;
     while(i<100000){
-        writeln("Inserting I=",i);
-        
+        writeln("Creating data I=",i);
         data.push_back(("Brian"+(i:string),"brian@email.co"+(i:string)));
         data.push_back(("Kerim"+(i:string),"kerim@email.co"+(i:string)));
     i+=1;
@@ -33,7 +29,11 @@ var pcon = new PgParallelConnection("localhost", "postgres", "test", "password")
 
     t.start();
 
-    pcon.execute("INSERT INTO public.contacts(\"name\",\"email\") VALUES ('%s','%s')",data);
+    //Columns names array
+    var cols:[1..2]string=["name","email"];
+
+    //Batch insert tuples array. parameters are table name, column's name array, data containing the tuples array
+    pcon.insertTuples("public.contacts",cols,data);
     
     t.stop();
 
@@ -41,6 +41,7 @@ var pcon = new PgParallelConnection("localhost", "postgres", "test", "password")
 
     
   }
+
 
 
 }

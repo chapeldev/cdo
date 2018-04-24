@@ -50,9 +50,7 @@ class PgParallelConnection{
     proc execute(query:string, data:[?D]?eltType){
         const numCores = here.numPUs();
         const connections = [1..numCores]  PgConnectionFactory(this.host,this.user,this.database,this.passwd);
-        const chunk_size: int = 1 + data.size/numCores;
-        writeln("Number of Cores: ",numCores);
-        writeln("Chunk Size: ",chunk_size);
+        const chunk_size:int = 1 + data.size/numCores;
 
         coforall tid in 1..numCores {
                        //connections[tid]…
@@ -70,11 +68,53 @@ class PgParallelConnection{
             cursor.execute(query,chunk);
             cursor.close();
             connections[tid].close();
-             //writeln("End Connection ",tid);
+             writeln("End Connection ",tid);
+        }       
+    }
+
+    proc insertTuples(table:string,columns:[?D]string,data:[?D2]?eltType){
+        const numCores = here.numPUs();
+        const connections = [1..numCores]  PgConnectionFactory(this.host,this.user,this.database,this.passwd);
+        const chunk_size:int =  1+data.size/numCores;
+        coforall tid in 1..numCores {       
+            var cols:string;
+            var datastmt:string;
+            var istart = (chunk_size*(tid-1)+1);
+            var iend = (chunk_size*(tid));
+
+            if(iend>D2.high){
+                iend=D2.high;
+                
+            }
+            var chunk = data[istart..iend];
+            (cols,datastmt)= this.__tupleToStatement(columns,chunk);
+            var cursor = connections[tid].cursor();
+            var query= "insert into "+table+""+cols+" VALUES "+datastmt+";";
+            cursor.execute(query);
+            cursor.close();
         }
 
+        for tid in 1..numCores {
+            connections[tid].close();
+        }       
+ 
+    }
+    proc __tupleToStatement(columns:[?D]string,data:[?D2]?eltType):(string,string){
+        var cols:string = "("+(",".join(columns))+")";
+        
+        var str:[{1..0}]string;
+        for idx in D2{
+            var val =  "'"+("','".join(data[idx]))+"'";
+            str.push_back("("+val+")");
+        }
+
+        var datastmt=",".join(str);
+
+        return (cols,datastmt);
 
     }
+
+    
 
 }
 
