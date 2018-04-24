@@ -34,10 +34,10 @@ proc PgConnectionFactory(host:string, user:string="", database:string="", passwd
 }
 
 class PgParallelConnection{
-    
+
     var host:string;
     var user:string="";
-    var database:string=""; 
+    var database:string="";
     var passwd:string="";
 
     proc init(host:string, user:string="", database:string="", passwd:string=""){
@@ -52,15 +52,16 @@ class PgParallelConnection{
         const connections = [1..numCores]  PgConnectionFactory(this.host,this.user,this.database,this.passwd);
         const chunk_size:int = 1 + data.size/numCores;
 
-        coforall tid in 1..numCores {           
+        coforall tid in 1..numCores {
                        //connections[tid]…
-            //writeln("Connection ",tid);       
-            var istart = (chunk_size*(tid-1)+1);
-            var iend = (chunk_size*tid);
+            writeln("Connection ",tid);
+            var istart: int = (chunk_size*(tid-1)+1);
+            var iend: int = (chunk_size*tid);
+            writeln("istart",tid,": ",istart);
             if(iend>D.high){
                 iend=D.high;
             }
-
+            writeln("iend",tid,": ",iend);
 
             var chunk = data[istart..iend];
             var cursor = connections[tid].cursor();
@@ -110,6 +111,7 @@ class PgParallelConnection{
         var datastmt=",".join(str);
 
         return (cols,datastmt);
+
     }
 
     
@@ -122,12 +124,12 @@ class PgConnection:ConnectionBase{
      var dsn:string;
      var conn:c_ptr(PGconn);
     // var mapperDom:domain(string); //When I declare this the compiler says that there is an error
-    // var type_mapper:[mapperDom]string; 
-    
+    // var type_mapper:[mapperDom]string;
+
      proc PgConnection(host:string, user:string="", database:string="", passwd:string=""){
         try{
             this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
-          
+
             this.conn = PQconnectdb(this.dsn.localize().c_str());
             if (PQstatus(conn) != CONNECTION_OK)
             {
@@ -136,16 +138,16 @@ class PgConnection:ConnectionBase{
                 PQfinish(conn);
                 halt("Error");
             }
-            
+
         }catch{
                 writeln("Postgres Connection to database exception");
         }
-         
+
      }
 
 
     proc getNativeConection(): c_ptr(PGconn){
-        return this.conn;   
+        return this.conn;
     }
 
     proc helloWorld(){
@@ -160,7 +162,7 @@ class PgConnection:ConnectionBase{
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
         {
             //Todo: Improve error messages
-             
+
             PQclear(res);
 
             halt("error");
@@ -203,33 +205,33 @@ class PgConnection:ConnectionBase{
         return new QueryBuilder(new PgQueryBuilder(this,table));
     }*/
 
-    // I am letting this for the next release 
+    // I am letting this for the next release
     /*proc model():ModelEngine{
         var engine = new ModelEngine(new Connection(this));
         return engine;
     }*/
 
-   
+
 
 }
 
 class PgCursor:CursorBase{
-    
+
    var con:PgConnection;
    var pgcon:c_ptr(PGconn);
    var res:c_ptr(PGresult);
 
-   var mapperDom:domain(string); 
-   var type_mapper:[mapperDom]string; 
- 
-   
+   var mapperDom:domain(string);
+   var type_mapper:[mapperDom]string;
+
+
    var nFields:int(32);
    var numRows:int(32);
    var curRow:int(32)=0;
 
    var execLock$:sync bool=true;
 
-    
+
 
    proc PgCursor(con:PgConnection, pgcon:c_ptr(PGconn)){
        this.con = con;
@@ -286,7 +288,7 @@ class PgCursor:CursorBase{
         this.__registerTypeName(791, "string-array"); // money[]
         this.__registerTypeName(1183, "string-array"); // time[]
         this.__registerTypeName(1270, "string-array"); // timetz[]
-        
+
 
     }
 
@@ -297,9 +299,9 @@ class PgCursor:CursorBase{
         if(this.mapperDom.member(oid:string)){
             return this.type_mapper[oid:string];
         }
-        return oid:string;        
+        return oid:string;
     }
-   
+
 
     proc rowcount():int(32){
         return this.numRows;
@@ -312,11 +314,11 @@ class PgCursor:CursorBase{
 
     proc close(){
 
-        PQclear(this.res);    
+        PQclear(this.res);
     }
 
     proc execute(query:string, params){
-        
+
         try{
             //This is not a code art.
             if(isTuple(params)){
@@ -327,7 +329,7 @@ class PgCursor:CursorBase{
                         this.execute(query,p);
                         isT=true;
                     }
-                  
+
                 }
                 if(!isT){
                     this.execute(query.format((...params)));
@@ -335,9 +337,9 @@ class PgCursor:CursorBase{
 
             }
             if(isArray(params)){
-                var  batch:string="";   
+                var  batch:string="";
                 for p in params{
-                    
+
                     if(isTuple(p)){
                         //this.execute(query.format((...p)));
                         batch += query.format((...p))+";\n";
@@ -346,29 +348,29 @@ class PgCursor:CursorBase{
                         batch += query.format((...p))+";\n";
                     }
 
-                   
+
                 }
                 this.execute(batch);
 
             }
-            
+
 
         }catch{
             writeln("Error");
         }
-        
+
     }
 
     proc execute(query:string){
         this.execLock$;
-        
+
         this.res = PQexec(this.pgcon, query.localize().c_str());
         if (PQresultStatus(res) !=  PGRES_COMMAND_OK)
         {
             var err = new string(PQerrorMessage(this.pgcon):c_string);
             writeln("Failed to fetch results: ",err);
             PQclear(res);
-            PQfinish(this.pgcon);       
+            PQfinish(this.pgcon);
             halt("Error");
         }
 
@@ -376,7 +378,7 @@ class PgCursor:CursorBase{
         this.nFields = PQnfields(this.res);
 
         var ii:int(32)=0;
-        while ( ii < nFields){    
+        while ( ii < nFields){
             var colname = new string(PQfname(this.res, ii:c_int));
             var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
             //this.con.__typeToString(PQftype(this.res,ii:c_int):int
@@ -398,16 +400,16 @@ class PgCursor:CursorBase{
             var err = new string(PQerrorMessage(this.pgcon):c_string);
             writeln("Failed to fetch results: ",err);
             PQclear(res);
-            PQfinish(this.pgcon);       
+            PQfinish(this.pgcon);
             halt("Error");
-            
+
         }
 
         this.__removeColumns();
         this.nFields = PQnfields(this.res);
 
         var ii:int(32)=0;
-        while ( ii < nFields){    
+        while ( ii < nFields){
             var colname = new string(PQfname(this.res, ii:c_int));
             var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
             this.__addColumn(ii,colname, coltype );
@@ -417,7 +419,7 @@ class PgCursor:CursorBase{
         this.curRow=0;
         this.resultCached=false;
         this.execLock$=true;
-        
+
    }
 
     proc query(query:string, params){
@@ -427,7 +429,7 @@ class PgCursor:CursorBase{
                 if(isTuple(p)){
                     this.query(query,p);
                     isT=true;
-                }   
+                }
             }
             if(!isT){
                 this.query(query.format((...params)));
@@ -444,18 +446,18 @@ class PgCursor:CursorBase{
         var row = "";
         var rows = PQntuples(res):int;
         while ( i < rows)
-        {       
+        {
             j=0;
             while(j < this.nFields){
                 row = new string(PQgetvalue(res, i:c_int, j:c_int):c_string);
                 write("\t",row);
                 j+=1;
-            }       
+            }
             writeln("\n");
             i+=1;
         }
     }
-    
+
     proc executemany(str:string, data:[?D]?eltType){
         try{
            for datum in data{
@@ -471,7 +473,7 @@ class PgCursor:CursorBase{
             return nil;
         }
         var row = new Row();
-       
+
         var j:int(32)=0;
 
         this.curRow = idx:int(32);
@@ -479,7 +481,7 @@ class PgCursor:CursorBase{
         while(j < this.nFields){
                 var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
                 var colinfo = this.getColumnInfo(j);
-                
+
                 row.addData(colinfo.name,datum,colinfo.coltype);
                 j += 1;
         }
@@ -495,7 +497,7 @@ class PgCursor:CursorBase{
     iter these()ref:Row{
         if(!this.resultCached){ // Creates a cache
             this.resultCacheDom.clear();
-            
+
             for row in this.fetchall(){
                 this.resultCache.push_back(row);
             }
@@ -512,7 +514,7 @@ class PgCursor:CursorBase{
            return nil;
         }
        var row = new Row();
-       
+
        var j:int(32)=0;
        while(j < this.nFields){
                 var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
@@ -528,11 +530,11 @@ class PgCursor:CursorBase{
 
             for row in this.fetchall(){
                 yield row;
-            } 
-             
+            }
+
         }else{
             var idx=0;
-            var res:Row = this.fetchone();    
+            var res:Row = this.fetchone();
             while((res!=nil)&&(idx<this.rowcount())&&(idx<count)){
                 yield res;
                 res = this.fetchone();
@@ -545,7 +547,7 @@ class PgCursor:CursorBase{
         while(res!=nil){
                 yield res;
                 res = this.fetchone();
-        }        
+        }
     }
 
     proc next():Row{
@@ -568,7 +570,7 @@ class PgCursor:CursorBase{
     proc insertRecord(table:string, ref el:?eltType):string{
 
         var cols = this.__objToArray(el);
-        return this.insert(table, cols);       
+        return this.insert(table, cols);
     }
 
     proc pgInsertDomainInColumnArray( table:string, column:string, dataDomain):string{
@@ -599,10 +601,10 @@ class PgCursor:CursorBase{
             writeln("Error on building insert query");
         }
          this.execute(sql);
-         return sql; 
+         return sql;
 
     }
-    
+
 
     proc insert(table:string, data:[?D]string):string{
         var colset:[{1..0}]string;
@@ -616,7 +618,7 @@ class PgCursor:CursorBase{
                 colset.push_back(this.__quote_columns(idx));
                 valset.push_back(this.__quote_values(data[idx]));
              }
-            
+
         }
         var cols_part = ", ".join(colset);
         var vals_part = ", ".join(valset);
@@ -630,7 +632,7 @@ class PgCursor:CursorBase{
          return sql;
     }
     proc update(table:string, whereCond:string, data:[?D]string):string{
-        var colvalset:[{1..0}]string; 
+        var colvalset:[{1..0}]string;
         for idx in D{
             colvalset.push_back(this.__quote_columns(idx)+" = "+this.__quote_values(data[idx]));
         }
@@ -678,7 +680,7 @@ class PgCursor:CursorBase{
             writeln("Error on building update query");
         }
          this.execute(sql);
-         return sql; 
+         return sql;
 
     }
 
@@ -701,7 +703,7 @@ class PgCursor:CursorBase{
 
 
 module PostgresNative{
-extern const CONNECTION_OK:int(64);   
+extern const CONNECTION_OK:int(64);
 
 extern const PGRES_TUPLES_OK:int(64);
 
