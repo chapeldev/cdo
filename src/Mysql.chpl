@@ -17,6 +17,8 @@ module Mysql{
     use Cdo;
     use SysBasic;
 	use MysqlNative;
+    use List;
+    use Map;
     
 
     require "my_global.h";
@@ -25,11 +27,12 @@ module Mysql{
 	require "mysql_helper.h";
 
 
-
+/*
 proc MysqlConnectionFactory(host:string, user:string="", database:string="", passwd:string=""):Connection{
 
   return new Connection(new MysqlConnection(host, user, database, passwd));
-}
+} 
+*/
 
 class MysqlConnection:ConnectionBase{
 
@@ -38,33 +41,25 @@ class MysqlConnection:ConnectionBase{
      var _autocommit:bool;
      var _tmp_autocommit:bool;
 
-     proc MysqlConnection(host:string, user:string="", database:string="", passwd:string=""){
-        try{
-            this._autocommit=true;
-            this._tmp_autocommit=true;
+     proc init(host:string, user:string="", database:string="", passwd:string=""){
+        this.conn = nil;
+        this._autocommit=true;
+        this._tmp_autocommit=true;
             
-            //this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
-           // writeln("conecting to ",this.dsn);
-            
-			this.conn = mysql_init(this.conn);
-			//this.conn = PQconnectdb(this.dsn.localize().c_str());
+		this.conn = mysql_init(this.conn);
 
   		if (mysql_real_connect(this.conn, host.localize().c_str(), user.localize().c_str(), passwd.localize().c_str(), 
           	database.localize().c_str(), 0, c_nil:c_string, 0) == c_nil) 
   		{
-      		writeln("Erro connect");
+      		writeln("Error connect");
       		mysql_close(this.conn);
       		exit(1);
   		}  
 
-		  this.setAutocommit(true);
-
-
-        }catch{
-                writeln("Connection to database exception");
-        }
-         
-     }
+		this.setAutocommit(true);   
+		this.setAutocommit(true);
+		this.setAutocommit(true);   
+    }
 
     proc getNativeConection(): c_ptr(MYSQL){
         return this.conn;    
@@ -74,14 +69,15 @@ class MysqlConnection:ConnectionBase{
         writeln("Hello from MysqlConnection");
     }
 
-    proc cursor(){
-        return new Cursor(new MysqlCursor(this,this.conn));
+    override proc cursor(){
+        return new MysqlCursor(this,this.conn);
     }
-    proc Begin(){
+    override proc Begin(){
         this.setAutocommit(false);
         mysql_query(this.conn,"START TRANSACTION;"); 
     }
-    proc commit(){
+
+    override proc commit(){
 
         mysql_commit(this.conn);
     
@@ -91,7 +87,8 @@ class MysqlConnection:ConnectionBase{
         
 
     }
-    proc rollback(){
+
+    override proc rollback(){
         //mysql_query(this.conn, "ROLLBACK");
         mysql_rollback(this.conn);
         if(!this.isAutoCommit()&&(this._tmp_autocommit==true)){
@@ -99,7 +96,7 @@ class MysqlConnection:ConnectionBase{
         }
     }
 
-    proc setAutocommit(commit:bool){
+    override proc setAutocommit(commit:bool){
         this._tmp_autocommit=this._autocommit;
         this._autocommit=commit;
 
@@ -117,14 +114,14 @@ class MysqlConnection:ConnectionBase{
     }
 
 
-    proc close(){
+    override proc close(){
 		mysql_close(this.conn);
     }
 
-    proc Table(table:string):QueryBuilder{
+    override proc Table(table:string):QueryBuilder{
         return new QueryBuilder(new MySqlQueryBuilder(this,table));
     }
-    proc table(table:string):QueryBuilder{
+    override proc table(table:string):QueryBuilder{
         
        return new QueryBuilder(new MySqlQueryBuilder());
      
@@ -147,10 +144,12 @@ class MysqlCursor:CursorBase{
    var numRows:int(32);
    var curRow:int(32)=0;
 
-   proc MysqlCursor(con:MysqlConnection, pgcon:c_ptr(MYSQL)){
+   proc init(con:MysqlConnection, pgcon:c_ptr(MYSQL)){
        this.con = con;
        this.mycon=pgcon;
+       this.complete();
        this.__registerTypes();
+
    }
    proc __registerTypes(){
         this.__registerTypeName(20, "int"); // int8
@@ -174,12 +173,12 @@ class MysqlCursor:CursorBase{
 
     }
 
-    proc close(){
+    override proc close(){
 
          mysql_free_result(this.res);    
     }
 
-    proc execute(query:string, params){
+    override proc execute(query:string, params){
         try{
           this.execute(query.format((...params)));
         }catch{
@@ -187,8 +186,7 @@ class MysqlCursor:CursorBase{
         }
     }
 
-    proc execute(query:string){
-        
+    override proc execute(query:string){
 		if (mysql_query(this.mycon,  query.localize().c_str())) 
   		{
       		writeln("Erro query");
@@ -203,7 +201,7 @@ class MysqlCursor:CursorBase{
 		this.res = mysql_store_result(this.mycon);
 		if ((this.res == c_nil)&&(mysql_errno(this.mycon)!=0)) 
   		{
-      		writeln("Erro Result");
+      		writeln("Error Result");
       		mysql_close(this.mycon);
       		//return -1;
   		}else if((this.res == c_nil)&&(mysql_errno(this.mycon)==0)){
@@ -215,7 +213,7 @@ class MysqlCursor:CursorBase{
 			this.fields = mysql_fetch_fields(this.res);
         	var ii:int(32)=0;
         	while ( ii < this.nFields){    
-				var colname = new string(__get_mysql_field_name_by_number(this.fields,ii:c_int));
+				var colname = createStringWithNewBuffer(__get_mysql_field_name_by_number(this.fields,ii:c_int));
                 //I need to get mysql type
             	//var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
                 
@@ -229,11 +227,11 @@ class MysqlCursor:CursorBase{
 		
     }
 
-    proc query(query:string){
+    override proc query(query:string){
        this.execute(query);
-   }
+    }
 
-    proc query(query:string, params){
+    override proc query(query:string, params){
         try{
             this.query(query.format((...params)));
         }catch{
@@ -244,7 +242,7 @@ class MysqlCursor:CursorBase{
 
    
 
-    proc dump(){
+    override proc dump(){
         var res = this.res;
         var  i=0;
         var j=0;
@@ -267,7 +265,7 @@ class MysqlCursor:CursorBase{
         }
     }
 
-    proc executemany(str:string, pr){
+    override proc executemany(str:string, pr){
 
         try{
 
@@ -283,12 +281,12 @@ class MysqlCursor:CursorBase{
         //}
     }
 
-    proc fetchrow(idx:int):Row{
+    proc fetchrow(idx:int): owned Row{
         if(idx > this.rowcount()){
-            return nil;
+            return new Row(valid=false);
         }
-        var row = new Row();       
 
+        var row = new Row(valid = true);
         this.curRow = idx:int(32);
 
 		mysql_data_seek(this.res, this.curRow:c_int);
@@ -306,22 +304,22 @@ class MysqlCursor:CursorBase{
         return row;
     }
 
-    proc this(idx:int):Row{
+    override proc this(idx:int):owned Row{
 
         return this.fetchrow(idx);
     }
 
-    iter these()ref:Row{
+    override iter these()ref{
         for row in this.fetchall(){
             yield row;
         }
     }
 
-    proc fetchone():Row{
-        if(this.curRow==this.numRows){
-           return nil;
+    override proc fetchone(): owned Row{
+        if this.curRow == this.numRows {
+            return new Row(valid = false);
         }
-       	var row = new Row();
+       	var row = new Row(valid = true);
 
        	var j:int(32)=0;
 		mysql_data_seek(this.res, this.curRow:c_int);
@@ -329,7 +327,7 @@ class MysqlCursor:CursorBase{
        	
 		while(j < this.nFields){
 			
-                var datum = new string(__get_mysql_row_by_number(_row, j:c_int));
+                var datum = createStringWithNewBuffer(__get_mysql_row_by_number(_row, j:c_int));
                 var colinfo = this.getColumnInfo(j);
                 row.addData(colinfo.name,datum);
                 j += 1;
@@ -337,7 +335,8 @@ class MysqlCursor:CursorBase{
         this.curRow += 1;
         return row;
     }
-    iter fetchmany(count:int=0):Row {
+
+    override iter fetchmany(count:int=0):owned Row {
         if(count<=0){
 
             for row in this.fetchall(){
@@ -347,58 +346,60 @@ class MysqlCursor:CursorBase{
         }else{
             var idx=0;
             var res:Row = this.fetchone();    
-            while((res!=nil)&&(idx<this.rowcount())&&(idx<count)){
+            while((res.isValid())&&(idx<this.rowcount())&&(idx<count)){
                 yield res;
                 res = this.fetchone();
                 idx+=1;
             }
         }
     }
-    iter fetchall():Row{
-        //var rowsDomain:domain(1)={0..1};
-        //var rows:[rowsDomain]Row;
+
+    override iter fetchall():owned Row{
 
         var res:Row = this.fetchone();
-        while(res!=nil){
+        while(res.isValid()){
             yield res;
             res = this.fetchone();
         }
         
     }
 
-    proc next():Row{
+    override proc next():owned Row{
         return this.fetchone();
     }
 
-    proc messages(){
+    override proc messages(){
 
     }
 
-proc __quote_columns(colname:string):string{
+    proc __quote_columns(colname:string):string{
         if(colname=="*"){
             return "*";
         }
 
         return "`"+colname+"`";
     }
+
     proc __quote_values(value:string):string{
         return "'"+value+"'";
     }
-    proc insertRecord(table:string, ref el:?eltType):string{
+
+    override proc insertRecord(table:string, ref el:?eltType):string{
 
         var cols = this.__objToArray(el);
         return this.insert(table, cols);       
     }
-    proc insert(table:string, data:[?D]string):string{
-        var colset:[{1..0}]string;
-        var valset:[{1..0}]string;
 
-         for idx in D{
-            colset.push_back(this.__quote_columns(idx));
-            valset.push_back(this.__quote_values(data[idx]));
+    override proc insert(table:string, data:map(string,string,parSafe=true)):string{
+        var colset: list(string);
+        var valset: list(string);
+
+         for idx in data{
+            colset.append(this.__quote_columns(idx));
+            valset.append(this.__quote_values(data[idx]));
         }
-        var cols_part = ", ".join(colset);
-        var vals_part = ", ".join(valset);
+        var cols_part = ", ".join(colset.toArray());
+        var vals_part = ", ".join(valset.toArray());
         var sql="";
         try{
             sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
@@ -408,12 +409,15 @@ proc __quote_columns(colname:string):string{
          this.execute(sql);
          return sql;
     }
-    proc update(table:string, whereCond:string, data:[?D]string):string{
-        var colvalset:[{1..0}]string; 
-        for idx in D{
-            colvalset.push_back(this.__quote_columns(idx)+" = "+this.__quote_values(data[idx]));
+
+
+    override proc update(table:string, whereCond:string, 
+                            data: map(string, string, parSafe=true)):string{
+        var colvalset: list(string); 
+        for idx in data {
+            colvalset.append(this.__quote_columns(idx)+" = "+this.__quote_values(data[idx]));
         }
-        var colsvals_part = ", ".join(colvalset);
+        var colsvals_part = ", ".join(colvalset.toArray());
         var sql="";
         try{
             sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
@@ -430,10 +434,12 @@ proc __quote_columns(colname:string):string{
         return this.update(table, whereCond, cols);
     }
 
-    proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
+    override proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
         return this.update(table,whereCond,el);
     }
-    proc Delete(table:string, whereCond:string):string{
+
+
+    override proc Delete(table:string, whereCond:string):string{
         var sql ="";
         try{
             sql = "DELETE FROM %s WHERE (%s)".format(table,whereCond);
@@ -447,7 +453,7 @@ proc __quote_columns(colname:string):string{
 }
 
 class MySqlQueryBuilder:QueryBuilderBase{
-    proc MySqlQueryBuilder(){
+    proc init(){
     }
 }
 
@@ -708,9 +714,6 @@ extern record ulong{
 }
 
 extern record ushort{
-}
-
-extern record uint{
 }
 
 extern record int8_t{

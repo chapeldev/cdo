@@ -25,47 +25,43 @@ module Postgres{
     require "stdio.h";
 
 
-proc PgConnectionFactory(host:string, user:string="", database:string="", passwd:string=""):Connection{
-
-  return new Connection(new PgConnection(host, user, database, passwd));
+proc PgConnectionFactory(host: string, user: string = "", database: string = "", 
+                        passwd: string = ""): Connection {
+    return new unmanaged Connection(new unmanaged PgConnection(host, 
+                                    user, database, passwd));
 }
 
-class PgConnection:ConnectionBase{
+class PgConnection: ConnectionBase {
 
-     var dsn:string;
-     var conn:c_ptr(PGconn);
+    var dsn: string;
+    var conn: c_ptr(PGconn);
     // var mapperDom:domain(string); //When I declare this the compiler says that there is an error
     // var type_mapper:[mapperDom]string; 
     
-     proc PgConnection(host:string, user:string="", database:string="", passwd:string=""){
-        try{
-            this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
-           // writeln("conecting to ",this.dsn);
-            this.conn = PQconnectdb(this.dsn.localize().c_str());
-            if (PQstatus(conn) != CONNECTION_OK)
-            {
-                var err=new string(PQerrorMessage(conn):c_string);
-                writeln("Connection to database failed: ",err);
-                PQfinish(conn);
-                halt("Error");
-            }
-            this.__registerTypes();
-        }catch{
-                writeln("Postgres Connection to database exception");
+    proc init(host: string, user: string = "", database: string = "", passwd: string = "") {
+        this.conn=nil
+        this.dsn="postgresql://%s:%s@%s/%s".format(user, passwd, host, database);
+        this.conn = PQconnectdb(this.dsn.localize().c_str());
+        if (PQstatus(conn) != CONNECTION_OK)
+        {
+            var err=new string(PQerrorMessage(conn): c_string);
+            writeln("Connection to database failed: ",err);
+            PQfinish(conn);
+            halt("Error");
         }
-         
-     }
+        this.__registerTypes();
+    }
 
-    proc getNativeConection(): c_ptr(PGconn){
+    proc getNativeConection(): c_ptr(PGconn) {
         return this.conn;   
     }
 
-    proc helloWorld(){
+    proc helloWorld() {
         writeln("Hello from PgConnection");
     }
 
-    proc cursor(){
-        return new Cursor(new PgCursor(this,this.conn));
+    proc cursor() {
+        return new unmanaged Cursor(new unmanaged PgCursor(this, this.conn));
     }
     proc Begin(){
         var res = PQexec(this.conn, "BEGIN");
@@ -81,8 +77,8 @@ class PgConnection:ConnectionBase{
         PQclear(res);
     }
 
-    proc commit(){
-    var res = PQexec(this.conn, "COMMIT");
+    proc commit() {
+        var res = PQexec(this.conn, "COMMIT");
         if (PQresultStatus(res) != PGRES_COMMAND_OK)
         {
             //Todo: Improve error messages

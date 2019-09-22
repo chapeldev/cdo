@@ -2,7 +2,7 @@ module Main{
     use Cdo;
     use Mysql;
     proc main(){
-          var con = MysqlConnectionFactory("localhost", "root", "teste", "root");        //Open a cursor
+          var con = new MysqlConnection("localhost", "root", "teste", "krishna");        //Open a cursor
 
          //var qb = new QueryBuilder( new MySqlQueryBuilder(con, "contacts"));
 

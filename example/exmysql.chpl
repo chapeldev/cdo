@@ -5,16 +5,16 @@ use Mysql;
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
 
-        var con = MysqlConnectionFactory("localhost", "root", "teste", "root");
-
+        var con = new MysqlConnection("localhost", "root", "teste", "krishna");
+        writeln(con);
 
         //Open a cursor
         var cursor = con.cursor();
         //Queries from database
         cursor.query("SELECT * FROM contacts"); 
         //Get one row.
-        var res:Row = cursor.fetchone();
-        while(res!=nil){
+        var res: Row = cursor.fetchone();
+        while(res.isValid()){
             //print the results.
             writeln(res);
             //get the next row one.
@@ -22,8 +22,8 @@ proc main(){
         }
 
         // Queries passing tuple to formated query string.
-        cursor.query("SELECT %s, %s FROM contacts",("email","name")); 
-        
+        cursor.query("SELECT %s, %s FROM contacts",("email","name"));
+        // writeln(cursor);
         // iterate over all rows
         for row in cursor{
             //get row data by column name and print it.
@@ -34,7 +34,7 @@ proc main(){
 
         // iterate over all rows
         for row in cursor{
-            //get row data by column number and print it.
+            // get row data by column number and print it.
             writeln("name = ", row[1] );
         }
 
@@ -47,7 +47,7 @@ proc main(){
     con.Begin();
 
     var command =" \
-    CREATE TABLE COMPANY(\
+    CREATE TABLE IF NOT EXISTS COMPANY(\
    ID INT PRIMARY KEY     NOT NULL,\
    NAME           TEXT    NOT NULL,\
    AGE            INT     NOT NULL,\

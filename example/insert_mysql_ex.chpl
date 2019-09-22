@@ -1,10 +1,11 @@
 module Main{
 use Cdo;
 use Mysql;
+use List;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
-         var con = MysqlConnectionFactory("localhost", "root", "teste", "root");        //Open a cursor
+         var con = new MysqlConnection("localhost", "root", "teste", "krishna");        //Open a cursor
         //Open a cursor
         var cursor = con.cursor();
       
@@ -12,11 +13,11 @@ proc main(){
     type DataTuple = 2*string;
 
 // Array of data
-    var data:[{1..3}]DataTuple;
+    var data:list(DataTuple);
 // Data to be stored
-    data[1]=("John","john@email.co");
-    data[2]=("Mary","marry@email.co");
-    data[3]=("Paul","paul@email.co");
+    data.append(("John","john@email.co"));
+    data.append(("Mary","marry@email.co"));
+    data.append(("Paul","paul@email.co"));
 
 // Simple insert in Data
     for datum in data{
@@ -27,13 +28,13 @@ proc main(){
     class MyContact{
       var name:string;
       var email:string;
-      proc MyContact(name:string, email:string){
+      proc init(name:string, email:string){
           this.name = name;
           this.email = email;
       }
     }
 
-    var obj = new MyContact("Maria", "maria@marcos.com.br");
+    var obj = new unmanaged MyContact("Maria", "maria@marcos.com.br");
     // Insert object into database.
     writeln(cursor.insertRecord("contacts", obj));
 //Select 
