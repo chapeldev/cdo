@@ -109,7 +109,7 @@ use Mysql;
 proc main(){
 //Open connection to Mysql database. Parametrs are host,username, database, password
 
-var con = new MysqlConnection("localhost", "username", "database", "password");
+var con = MysqlConnectionFactory("localhost", "username", "database", "password");
 
 
 //Open a cursor

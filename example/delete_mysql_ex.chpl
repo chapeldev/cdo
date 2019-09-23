@@ -4,7 +4,7 @@ use Mysql;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
-    var con = new MysqlConnection("localhost", "root", "teste", "krishna");        //Open a cursor
+    var con = MysqlConnectionFactory("localhost", "root", "teste", "krishna");        //Open a cursor
     //Open a cursor
     var cursor = con.cursor();
     

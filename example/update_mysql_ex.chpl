@@ -5,7 +5,7 @@ use Map;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
-        var con = new MysqlConnection("localhost", "root", "teste", "krishna");        //Open a cursor
+        var con = MysqlConnectionFactory("localhost", "root", "teste", "krishna");        //Open a cursor
         var cursor = con.cursor();
     
 // class holding the data 
@@ -29,20 +29,20 @@ proc main(){
         writeln(row["id"]," ",row["name"]," ", row["email"]);
     }
 // Data associatave array
-    // var data: map(string,string, parSafe=true);
+    var data: map(string,string, parSafe=true);
 
-    // data["name"]="Maria Josef";
-    // data["email"]="maria@josef.com";
+    data["name"]="Maria Josef";
+    data["email"]="maria@josef.com";
 
-    //Update the db data
-    // writeln(cursor.update("contacts","id='6'" ,data));
+    // Update the db data
+    writeln(cursor.update("contacts","id='6'" ,data));
 
 //Select
-    // cursor.query("SELECT * FROM contacts");
-    // //Get results
-    // for row in  cursor{
-    //     writeln(row["id"]," ",row["name"]," ", row["email"]);
-    // }
+    cursor.query("SELECT * FROM contacts");
+    //Get results
+    for row in  cursor{
+        writeln(row["id"]," ",row["name"]," ", row["email"]);
+    }
     
     cursor.close();
     con.close();
