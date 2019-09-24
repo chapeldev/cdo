@@ -43,6 +43,7 @@ module Cdo{
 
     use CDOutils;
     use Map;
+    use List;
 
     pragma "no doc"
 
@@ -303,7 +304,7 @@ module Cdo{
 
     }
 
-    class Row{
+    class Row {
 
         pragma "no doc"
         var data: map(string,string,parSafe=true);
@@ -357,37 +358,28 @@ module Cdo{
         }
 
 
-        proc getArray(colname:string,
-        array_header_trail:string="{}",
-        separator:string=",",
-        strip_comma:bool=true
-
-        ){
+        proc getArray(colname: string, array_header_trail: string = "{}", 
+                        separator: string = ",", strip_comma: bool = true) {
             var ret: list(string);
 
-            if(this.data.contains(colname)){
+            if(this.data.contains(colname)) {
 
                 var strtype = this.getType(colname);
 
                 var value = this.data[colname]; 
 
-                if(value.startsWith(array_header_trail[1]) && value.endsWith(array_header_trail[2]) && strtype.endsWith("array")){
-                    
-                
-
+                if(value.startsWith(array_header_trail[1]) && 
+                value.endsWith(array_header_trail[2]) && strtype.endsWith("array")) {
                     var sz = value.length;
-                    
                     var values = value[2..(value.length-1)];
-                    
                     var rett = values.split(",");
-                    for r in rett{
-                        if(r.startsWith("\"")&&r.endsWith("\"")&&strip_comma){
-                            r = r[2..(r.length-1)];
+                    for r in rett {
+                        if(r.startsWith("\"") && r.endsWith("\"") && strip_comma) {
+                            ret.append(r[2..(r.length-1)]);
                         }
+                        else ret.append(r);
                     }
-
-                    return rett;
-
+                    return ret;
                 }            
                 ret.append(value);
                 return ret;
@@ -819,7 +811,7 @@ module Cdo{
 
         proc hasColumn(name:string):bool{
             for col in this.columns{
-                if(name == col.name){
+                if(name == columns[col].name){
                     return true;
                 }
             }
@@ -923,15 +915,15 @@ module Cdo{
         :rtype: `Row`
         */ 
 
-        proc fetchone():owned Row?{
-            return nil;
+        proc fetchone(): owned Row {
+            return new Row(valid = false);
         }
 
-        proc fetchAsRecord(ref el:?eltType):eltType{
+        proc fetchAsRecord(ref el:?eltType): eltType{
             //var el2: eltType = new eltType;
-            var row:Row = this.fetchone();
+            var row: Row = this.fetchone();
 
-            if(row==nil){
+            if(!row.isValid()){
                 return nil;
             }
             for param i in 1..numFields(eltType) {

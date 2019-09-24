@@ -1,11 +1,11 @@
 module Main{
-use Cdo;
-use Postgres;
+    use Cdo;
+    use Postgres;
 
-proc main(){
-    //Open connection with Postgres database. Parametrs are host,username, database, password
+    proc main(){
+        //Open connection with Postgres database. Parametrs are host,username, database, password
 
-        var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
+        var con = PgConnectionFactory("localhost", "krishna", "teste", "krishna");
 
 
         //Open a cursor
@@ -13,8 +13,8 @@ proc main(){
         //Queries from database
         cursor.query("SELECT * FROM public.contacts"); 
         //Get one row.
-        var res:Row = cursor.fetchone();
-        while(res!=nil){
+        var res: Row = cursor.fetchone();
+        while(res.isValid()) {
             //print the results.
             writeln(res);
             //get the next row one.
@@ -40,55 +40,44 @@ proc main(){
 
         cursor.close();
 
-    // Begins new transaction
-    /*
-    con.Begin();
+        // Begins new transaction
+        
+        con.Begin();
 
-    var command =" \
-    CREATE TABLE COMPANY(\
-   ID INT PRIMARY KEY     NOT NULL,\
-   NAME           TEXT    NOT NULL,\
-   AGE            INT     NOT NULL,\
-   ADDRESS        CHAR(50),\
-   SALARY         REAL\
-);";
-    var cursor2 = con.cursor();
+        var command =" \
+        CREATE TABLE IF NOT EXISTS COMPANY(\
+        ID INT PRIMARY KEY     NOT NULL,\
+        NAME           TEXT    NOT NULL,\
+        AGE            INT     NOT NULL,\
+        ADDRESS        CHAR(50),\
+        SALARY         REAL\
+        );";
+        var cursor2 = con.cursor();
 
-    cursor2.execute(command);
+        cursor2.execute(command);
 
-    cursor2.close();
+        cursor2.close();
 
-// Commits the transaction
- //  con.commit(); 
-// Rolls back the operations
-con.rollback();
-*/
-
-var cursor3 = con.cursor();
-
-    cursor.query("select name, email from contacts");
-
-    class MyContact{
-        var name:string;
-        var email:string;
-        proc init(){
-            this.name="";
-            this.email="";
-        }
-    }
-    var obj = cursor.fetchAsRecord(new MyContact());
-    while(obj!=nil){
-            //print the results.
-        writeln("** name = ",obj.name," *email = ",obj.email);
-            //get the next row one.
-        obj = cursor.fetchAsRecord(new MyContact());
-    }
+        // Commits the transaction
+        con.commit(); 
+        // Rolls back the operations
+        con.rollback();
     
-
-
-
-
-
+        // class MyContact {
+        //     var name: string;
+        //     var email: string;
+        //     proc init() {
+        //         this.name = "";
+        //         this.email = "";
+        //     }
+        // }
+        // var obj = cursor.fetchAsRecord(new MyContact());
+        // while(obj!=nil){
+        //         //print the results.
+        //     writeln("** name = ",obj.name," *email = ",obj.email);
+        //         //get the next row one.
+        //     obj = cursor.fetchAsRecord(new MyContact());
+        // }
         con.close();
         writeln("end");
     }

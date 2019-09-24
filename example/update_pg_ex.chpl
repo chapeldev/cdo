@@ -4,7 +4,7 @@ use Postgres;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
-        var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
+        var con = PgConnectionFactory("localhost", "krishna", "teste", "krishna");
         //Open a cursor
         var cursor = con.cursor();
     
@@ -13,14 +13,14 @@ proc main(){
     class MyContact{
       var name:string;
       var email:string;
-      proc MyContact(name:string, email:string){
+      proc init(name:string, email:string){
           this.name = name;
           this.email = email;
       }
     }
-    var obj = new MyContact("Carlos2", "Carlos2@carclos.com");
+    var obj = new unmanaged MyContact("Carlos2", "Carlos2@carclos.com");
     // Update object in database.
-    writeln(cursor.updateRecord("public.contacts","\"id\"='17'" ,obj));
+    writeln(cursor.updateRecord("public.contacts","\"id\"='6'" ,obj));
 
 //Select 
     cursor.query("SELECT * FROM public.contacts");
@@ -30,14 +30,13 @@ proc main(){
     }
 
 // Data associatave array
-    var d:domain(string);
-    var data:[d]string;
+    var data: map(string, string, parSafe = true);
 
     data["name"]="Maria Josef";
     data["email"]="maria@josef.com";
 
     //Update the db data
-    writeln(cursor.update("public.contacts","\"id\"='17'" ,data));
+    writeln(cursor.update("public.contacts","\"id\"='8'" ,data));
 
 //Select 
     cursor.query("SELECT * FROM public.contacts");
