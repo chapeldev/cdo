@@ -14,423 +14,483 @@
  * limitations under the License.
  */
 module Mysql{
-    use Cdo;
-    use SysBasic;
-	use MysqlNative;
-    use List;
-    use Map;
-    
+  use Cdo;
+  use SysBasic;
+  use MysqlNative;
+  use List;
+  use Map;  
+  require "my_global.h";
+  require "mysql.h" ;
+  require "stdio.h";
+  require "mysql_helper.h";
 
-    require "my_global.h";
-    require "mysql.h" ;
-    require "stdio.h";
-	require "mysql_helper.h";
+  /* Creates a connection to the MySQL server and returns a :class:`MysqlConnection` object
 
-
-
-proc MysqlConnectionFactory(host: string, user: string = "", database: string = "", 
-                            passwd: string = ""): MysqlConnection {
+     :arg host: The host name or IP address of the MySQL server.
+     :type host: `string`
+     :arg user: The user name used to authenticate with the MySQL server.
+     :type user: `string`
+     :arg database: The database name to use when connecting with the MySQL server.
+     :type database: `string`
+     :arg passwd: The password to authenticate the user with the MySQL server.
+     :type passwd: `string`
+  */
+  proc MysqlConnectionFactory(host: string, user: string = "", database: string = "", 
+                              passwd: string = ""): MysqlConnection {
     return new MysqlConnection(host, user, database, passwd);
-} 
+  }
 
+  class MysqlConnection: ConnectionBase {
+    pragma "no doc"
+    var conn: c_ptr(MYSQL);
+    pragma "no doc"
+    var _autocommit: bool;
+    pragma "no doc"
+    var _tmp_autocommit: bool;
 
-class MysqlConnection: ConnectionBase{
+    pragma "no doc"
+    proc init(host:string, user:string = "", database: string = "", passwd: string = "") {
+      this.conn = nil;
+      this._autocommit=true;
+      this._tmp_autocommit=true;
+      this.conn = mysql_init(this.conn);
 
-     var dsn: string;
-     var conn: c_ptr(MYSQL);
-     var _autocommit: bool;
-     var _tmp_autocommit: bool;
-
-     proc init(host:string, user:string = "", database: string = "", passwd: string = "") {
-        this.conn = nil;
-        this._autocommit=true;
-        this._tmp_autocommit=true;
-            
-		this.conn = mysql_init(this.conn);
-
-  		if (mysql_real_connect(this.conn, host.localize().c_str(), user.localize().c_str(), 
-            passwd.localize().c_str(),database.localize().c_str(), 0, 
-            c_nil:c_string, 0) == c_nil) 
-        {
-      		writeln("Error connect");
-      		mysql_close(this.conn);
-      		exit(1);
-  		}  
-
-		this.setAutocommit(true);
+      if (mysql_real_connect(this.conn, host.localize().c_str(), user.localize().c_str(), 
+        passwd.localize().c_str(),database.localize().c_str(), 0, c_nil:c_string, 0) == c_nil) 
+      {
+        writeln("Error connecting to Database");
+        mysql_close(this.conn);
+        exit(1);
+      }  
+      this.setAutocommit(true);
     }
 
+    pragma "no doc"
     proc getNativeConection(): c_ptr(MYSQL) {
-        return this.conn;    
+      return this.conn;    
     }
 
+    pragma "no doc"
     proc helloWorld() {
-        writeln("Hello from MysqlConnection");
+      writeln("Hello from MysqlConnection");
     }
 
+    /*This method returns a :class:`MysqlCursor` object.
+      The returned object is a CursorBase instance.
+    */
     override proc cursor() {
-        return new MysqlCursor(this,this.conn);
+      return new MysqlCursor(this, this.conn);
     }
 
+    /*This method starts a transaction. You must commit after every transaction that 
+      modifies data for tables that use transactional storage engines.
+    */
     override proc Begin() {
-        this.setAutocommit(false);
-        mysql_query(this.conn,"START TRANSACTION;"); 
+      this.setAutocommit(false);
+      mysql_query(this.conn,"START TRANSACTION;"); 
     }
-
+    
+    /*This method sends a COMMIT statement to the MySQL server, committing the current 
+      transaction. By default Connector/Chapel does autocommit, but call this method 
+      after every transaction that modifies data for tables that use transactional 
+      storage engines.
+    */
     override proc commit() {
-
-        mysql_commit(this.conn);
-    
-        if(!this.isAutoCommit() && (this._tmp_autocommit==true)) {
-            this.setAutocommit(true);
-        }
+      mysql_commit(this.conn);    
+      if(!this.isAutoCommit() && (this._tmp_autocommit==true)) {
+        this.setAutocommit(true);
+      }
     }
 
+    /*This method sends a ROLLBACK statement to the MySQL server, undoing all data 
+     changes from the current transaction.
+    */
     override proc rollback() {
-        mysql_rollback(this.conn);
-        if(!this.isAutoCommit() && (this._tmp_autocommit==true)) {
-            this.setAutocommit(true);
-        }
+      mysql_rollback(this.conn);
+      if(!this.isAutoCommit() && (this._tmp_autocommit==true)) {
+        this.setAutocommit(true);
+      }
     }
 
+    /*This method can be used to assign a value of True or False to enable or 
+      disable the autocommit feature of MySQL.
+
+       :arg commit: Value to enable or disable the autocommit.
+       :type commit: `bool`
+    */
     override proc setAutocommit(commit: bool) {
-        this._tmp_autocommit = this._autocommit;
-        this._autocommit = commit;
-
-        if(commit==true) {
-            mysql_autocommit(this.conn, 1);
-            mysql_query(this.conn,"SET autocommit = 1;");
-        }
-        else {
-            mysql_autocommit(this.conn, 0);
-            mysql_query(this.conn,"SET autocommit = 0;");
-        }
+      this._tmp_autocommit = this._autocommit;
+      this._autocommit = commit;
+      if(commit==true) {
+        mysql_autocommit(this.conn, 1);
+        mysql_query(this.conn,"SET autocommit = 1;");
+      }
+      else {
+        mysql_autocommit(this.conn, 0);
+        mysql_query(this.conn,"SET autocommit = 0;");
+      }
     }
 
+    /* This method can be called to retrieve the current autocommit setting.
+    */
     proc isAutoCommit(): bool {
-        return this._autocommit;
+      return this._autocommit;
     }
 
-
+    /*This method tries to send a QUIT command and close the socket. 
+      It raises no exceptions.
+    */
     override proc close() {
-		mysql_close(this.conn);
+	    mysql_close(this.conn);
     }
 
+    pragma "no doc"
     override proc Table(table: string): QueryBuilder {
-        return new QueryBuilder(new MySqlQueryBuilder(this,table));
+      return new QueryBuilder(new MySqlQueryBuilder(this,table));
     }
 
+    pragma "no doc"
     override proc table(table: string): QueryBuilder {
-       return new QueryBuilder(new MySqlQueryBuilder());
+      return new QueryBuilder(new MySqlQueryBuilder());
     }
 
-}
+  }
 
-class MysqlCursor:CursorBase{
-    
+  class MysqlCursor: CursorBase {
+    pragma "no doc"
     var con: MysqlConnection;
+    pragma "no doc"
     var mycon: c_ptr(MYSQL);
+    pragma "no doc"
     var res: c_ptr(MYSQL_RES);
+    pragma "no doc"
     var fields: c_ptr(MYSQL_FIELD);
+    pragma "no doc"
     var nFields: int(32);
+    pragma "no doc"
     var numRows: int(32);
+    pragma "no doc"
     var curRow: int(32)=0;
 
+    pragma "no doc"
     proc init(con: MysqlConnection, pgcon: c_ptr(MYSQL)) {
-        this.con = con;
-        this.mycon = pgcon;
-        this.complete();
-        this.__registerTypes();
-
+      this.con = con;
+      this.mycon = pgcon;
+      this.complete();
     }
 
-    proc __registerTypes() {
-        this.__registerTypeName(20, "int"); // int8
-    }
-
-    proc __registerTypeName(oid: int, cdo_type: string) {
-        //this.type_mapper[oid:string]= cdo_type;
-    }
-
-    proc __typeToString(oid: c_int): string {
-        /*if(this.mapperDom.member(oid:string)){
-            return this.type_mapper[oid:string];
-        }*/
-        return oid: string;        
-    }
-
+    /*This method returns the number of rows returned for SELECT statements, 
+      or the number of rows affected by DML statements such as INSERT or UPDATE. 
+    */
     proc rowcount(): int(32) {
-        return this.numRows;
+      return this.numRows;
     }
 
-
+    pragma "no doc"
     proc callproc() {
 
     }
 
+    /*This method closes the cursor, resets all results, and ensures that the 
+    cursor object has no reference to its original connection object.
+    */
     override proc close() {
-        mysql_free_result(this.res);    
+      mysql_free_result(this.res);
     }
 
+    /*This method executes the given database operation (query or command). 
+      The parameters found in the tuple params are bound to the variables in the operation.
+      Specify variables using '%s' parameter style
+    */
     override proc execute(query: string, params) {
-        try {
-            this.execute(query.format((...params)));
-        }
-        catch {
-            writeln("Error");
-        }
+      try {
+        this.execute(query.format((...params)));
+      }
+      catch {
+        writeln("Error");
+      }
     }
 
+    /*This method executes the given database operation (query or command).
+    */
     override proc execute(query: string) {
-		if (mysql_query(this.mycon,  query.localize().c_str())) {
-      		writeln("Error query"); 
-      		// mysql_close(this.mycon);
-  		}
+	  if (mysql_query(this.mycon,  query.localize().c_str())) {
+        writeln("Error query"); 
+      	// mysql_close(this.mycon);
+  	  }
+      this.__removeColumns();
 
-        this.__removeColumns();
-
-		this.res = mysql_store_result(this.mycon);
-		if ((this.res == c_nil) && (mysql_errno(this.mycon) != 0)) {
-      		writeln("Error Result");
-      		// mysql_close(this.mycon);
-  		}
-        else if((this.res == c_nil) && (mysql_errno(this.mycon) == 0)) {
-			this.nFields =0;
-		}
-        else if((this.res != c_nil) && (mysql_errno(this.mycon)==0)) {
-			this.nFields = mysql_num_fields(this.res):int(32);
-			this.fields = mysql_fetch_fields(this.res);
-        	var ii: int(32) = 0;
-        	while (ii < this.nFields) {    
-				var colname = createStringWithNewBuffer(
-                    __get_mysql_field_name_by_number(this.fields,ii:c_int));
-                //I need to get mysql type
-            	//var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
-                
-                this.__addColumn(ii,colname);
-            	ii += 1;
-        	}
-        	this.numRows = mysql_num_rows(this.res): int(32);
-        	this.curRow = 0;
-		}
+      this.res = mysql_store_result(this.mycon);
+      if ((this.res == c_nil) && (mysql_errno(this.mycon) != 0)) {
+        writeln("Error Result");
+        // mysql_close(this.mycon);
+      }
+      else if((this.res == c_nil) && (mysql_errno(this.mycon) == 0)) {
+        this.nFields =0;
+      }
+      else if((this.res != c_nil) && (mysql_errno(this.mycon)==0)) {
+        this.nFields = mysql_num_fields(this.res):int(32);
+        this.fields = mysql_fetch_fields(this.res);
+        var ii: int(32) = 0;
+        while (ii < this.nFields) {    
+          var colname = createStringWithNewBuffer(
+          __get_mysql_field_name_by_number(this.fields,ii:c_int));
+          //I need to get mysql type
+          //var coltype = this.__typeToString(PQftype(this.res,ii:c_int));    
+          this.__addColumn(ii,colname);
+          ii += 1;
+        }
+        this.numRows = mysql_num_rows(this.res): int(32);
+        this.curRow = 0;
+      }
     }
 
+    /*This method executes the given database query.
+    */
     override proc query(query: string) {
-       this.execute(query);
+      this.execute(query);
     }
 
+    /*This method executes the given database query.The parameters found in the 
+      tuple params are bound to the variables in the operation. Specify variables 
+      using '%s' parameter style
+    */
     override proc query(query: string, params) {
-        try {
-            this.query(query.format((...params)));
-        }
-        catch {
-            writeln("Error");
-        }
+      try {
+        this.query(query.format((...params)));
+      }
+      catch {
+        writeln("Error");
+      }
     }
 
+    pragma "no doc"
     override proc dump() {
-        var res = this.res;
-        var i = 0;
-        var j = 0;
-        var row = "";
-        var rows = this.numRows: int;
-        while (i < rows) {       
-            j = 0;
-            while(j < this.nFields) {
-                //row = new string(PQgetvalue(res, i:c_int, j:c_int):c_string);
+      var res = this.res;
+      var i = 0;
+      var j = 0;
+      var row = "";
+      var rows = this.numRows: int;
+      while (i < rows) {       
+        j = 0;
+        while(j < this.nFields) {
+          //row = new string(PQgetvalue(res, i:c_int, j:c_int):c_string);
 
-                // printf("\t%s".localize().c_str(),PQgetvalue(res,  i:c_int, j:c_int));
-                //write("\t",row);
-                //write("\t",PQgetvalue(res,  i:c_int, j:c_int):string);
-           
-                j += 1;
-            }       
-            writeln("\n");
-            i += 1;
-        }
+          // printf("\t%s".localize().c_str(),PQgetvalue(res,  i:c_int, j:c_int));
+          //write("\t",row);
+          //write("\t",PQgetvalue(res,  i:c_int, j:c_int):string);
+ 
+          j += 1;
+        }       
+        writeln("\n");
+        i += 1;
+      }
     }
 
+    pragma "no doc"
     override proc executemany(str: string, pr){
-        try {
-            writeln(str.format((...pr)));
-        }
-        catch {
-            writeln("Error");
-        }
-        //for p in pr{
-            //writeln(p);
-        //}
+      try {
+        writeln(str.format((...pr)));
+      }
+      catch {
+        writeln("Error");
+      }
+      //for p in pr{
+        //writeln(p);
+      //}
     }
 
+    pragma "no doc"
     proc fetchrow(idx: int): owned Row {
-        if(idx > this.rowcount()){
-            return new Row(valid = false);
-        }
+      if(idx > this.rowcount()){
+        return new Row(valid = false);
+      }
 
-        var row = new Row(valid = true);
-        this.curRow = idx: int(32);
+      var row = new Row(valid = true);
+      this.curRow = idx: int(32);
 
-		mysql_data_seek(this.res, this.curRow: c_int);
+	  mysql_data_seek(this.res, this.curRow: c_int);
 		
-		var _row = mysql_fetch_row(this.res);
-       	var j: int(32) = 0;
-		while(j < this.nFields) {
-            var datum = new string(__get_mysql_row_by_number(_row, j: c_int));
-            var colinfo = this.getColumnInfo(j);
-            row.addData(colinfo.name,datum);
-            j += 1;
-        }
-        this.curRow += 1;
-        return row;
+      var _row = mysql_fetch_row(this.res);
+      var j: int(32) = 0;
+	  while(j < this.nFields) {
+        var datum = new string(__get_mysql_row_by_number(_row, j: c_int));
+        var colinfo = this.getColumnInfo(j);
+        row.addData(colinfo.name,datum);
+        j += 1;
+      }
+      this.curRow += 1;
+      return row;
     }
 
+    /*Rows can be indexed*/
     override proc this(idx: int): owned Row {
-        return this.fetchrow(idx);
+      return this.fetchrow(idx);
     }
 
+    /* This method returns an iterator to rows.
+    */
     override iter these()ref{
-        for row in this.fetchall(){
-            yield row;
-        }
+      for row in this.fetchall(){
+        yield row;
+      }
     }
 
+    /*This method retrieves the next row of a query result set and returns a valid row, 
+      or invalid row(can be checked using `Row.isValid()`) if no more rows are available.
+    */
     override proc fetchone(): owned Row {
-        if this.curRow == this.numRows {
-            return new Row(valid = false);
-        }
-       	var row = new Row(valid = true);
+      if this.curRow == this.numRows {
+        return new Row(valid = false);
+      }
+      var row = new Row(valid = true);
 
-       	var j: int(32) = 0;
-		mysql_data_seek(this.res, this.curRow: c_int);
-		var _row = mysql_fetch_row(this.res);
+      var j: int(32) = 0;
+	  mysql_data_seek(this.res, this.curRow: c_int);
+	  var _row = mysql_fetch_row(this.res);
        	
-		while(j < this.nFields) {
-            var datum = createStringWithNewBuffer(
-                        __get_mysql_row_by_number(_row, j: c_int));
-            var colinfo = this.getColumnInfo(j);
-            row.addData(colinfo.name,datum);
-            j += 1;
-        }
-        this.curRow += 1;
-        return row;
+	  while(j < this.nFields) {
+        var datum = createStringWithNewBuffer(__get_mysql_row_by_number(_row, j: c_int));
+        var colinfo = this.getColumnInfo(j);
+        row.addData(colinfo.name,datum);
+        j += 1;
+      }
+      this.curRow += 1;
+      return row;
     }
 
+    /*This method fetches the next set of rows of a query result and returns an iterator.
+    */
     override iter fetchmany(count: int=0): owned Row {
-        if(count <= 0) {
-            for row in this.fetchall() {
-                yield row;
-            }
+      if(count <= 0) {
+        for row in this.fetchall() {
+          yield row;
         }
-        else {
-            var idx = 0;
-            var res:Row = this.fetchone();    
-            while((res.isValid()) && (idx<this.rowcount()) && (idx<count)) {
-                yield res;
-                res = this.fetchone();
-                idx += 1;
-            }
+      }
+      else {
+        var idx = 0;
+        var res:Row = this.fetchone();    
+        while((res.isValid()) && (idx<this.rowcount()) && (idx<count)) {
+          yield res;
+          res = this.fetchone();
+          idx += 1;
         }
+      }
     }
 
+    /* The method fetches all (or all remaining) rows of a query result set and returns 
+      an iterator.
+    */
     override iter fetchall(): owned Row {
-
-        var res: Row = this.fetchone();
-        while(res.isValid()) {
-            yield res;
-            res = this.fetchone();
-        }
+      var res: Row = this.fetchone();
+      while(res.isValid()) {
+        yield res;
+        res = this.fetchone();
+      }
     }
 
+    /* This method retrieves the next row of a query result set and returns a valid row, 
+      or invalid row(can be checked using `Row.isValid()`) if no more rows are available.
+    */
     override proc next(): owned Row{
-        return this.fetchone();
+      return this.fetchone();
     }
 
-    override proc messages() {}
-
+    pragma "no doc"
     proc __quote_columns(colname: string): string {
-        if(colname == "*") {
-            return "*";
-        }
-        return "`" + colname + "`";
+      if(colname == "*") {
+        return "*";
+      }
+      return "`" + colname + "`";
     }
 
+    pragma "no doc"
     proc __quote_values(value: string): string{
-        return "'" + value + "'";
+      return "'" + value + "'";
     }
 
+    /* This methods insert an object to the given table
+    */
     override proc insertRecord(table: string, ref el: ?eltType): string {
-        var cols = this.__objToArray(el);
-        return this.insert(table, cols);       
+      var cols = this.__objToArray(el);
+      return this.insert(table, cols);       
     }
 
-    override proc insert(table: string, data:map(string, string, parSafe = true)): string{
-        var colset: list(string);
-        var valset: list(string);
-
-        for idx in data{
-            colset.append(this.__quote_columns(idx));
-            valset.append(this.__quote_values(data[idx]));
-        }
-        var cols_part = ", ".join(colset.toArray());
-        var vals_part = ", ".join(valset.toArray());
-        var sql = "";
-        try {
-            sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
-        }
-        catch {
-            writeln("Error on building insert query");
-        }
-        this.execute(sql);
-        return sql;
+    pragma "no doc"
+    override proc insert(table: string, data:map(string, string, parSafe = true)): string {
+      var colset: list(string);
+      var valset: list(string);
+      for idx in data{
+        colset.append(this.__quote_columns(idx));
+        valset.append(this.__quote_values(data[idx]));
+      }
+      var cols_part = ", ".join(colset.toArray());
+      var vals_part = ", ".join(valset.toArray());
+      var sql = "";
+      try {
+        sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
+      }
+      catch {
+        writeln("Error on building insert query");
+      }
+      this.execute(sql);
+      return sql;
     }
 
-
+    pragma "no doc"
     override proc update(table: string, whereCond: string, 
                         data: map(string, string, parSafe = true)): string {
-        var colvalset: list(string); 
-        for idx in data {
-            colvalset.append(this.__quote_columns(idx) + " = " + 
-                            this.__quote_values(data[idx]));
-        }
-        var colsvals_part = ", ".join(colvalset.toArray());
-        var sql = "";
-        try {
-            sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
-        }
-        catch {
-            writeln("Error on building update query");
-        }
-        this.execute(sql);
-        return sql;
+      var colvalset: list(string); 
+      for idx in data {
+        colvalset.append(this.__quote_columns(idx) + " = " + 
+                         this.__quote_values(data[idx]));
+      }
+      var colsvals_part = ", ".join(colvalset.toArray());
+      var sql = "";
+      try {
+        sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
+      }
+      catch {
+        writeln("Error on building update query");
+      }
+      this.execute(sql);
+      return sql;
     }
 
+    /* This methods updates a table with the given object based on specified condition
+    */
     proc update(table: string, whereCond: string, ref el: ?eltType): string {
-        var cols = this.__objToArray(el);
-        return this.update(table, whereCond, cols);
+      var cols = this.__objToArray(el);
+      return this.update(table, whereCond, cols);
     }
 
+    /* This methods updates a table with the given object based on specified condition
+    */
     override proc updateRecord(table: string, whereCond: string, ref el: ?eltType): string {
-        return this.update(table,whereCond,el);
+      return this.update(table,whereCond,el);
     }
 
+    /* This method deletes rows of th table based on the given condition
+    */
     override proc Delete(table: string, whereCond: string): string {
-        var sql = "";
-        try{
-            sql = "DELETE FROM %s WHERE (%s)".format(table,whereCond);
-        }catch{
-            writeln("Error on formating delete statement");
-        }
-        this.execute(sql);
-        return sql;
+      var sql = "";
+      try {
+        sql = "DELETE FROM %s WHERE (%s)".format(table,whereCond);
+      }
+      catch {
+        writeln("Error on formating delete statement");
+      }
+      this.execute(sql);
+      return sql;
     }
+  }
 
-}
-
-class MySqlQueryBuilder:QueryBuilderBase {
+  pragma "no doc"
+  class MySqlQueryBuilder:QueryBuilderBase {
     proc init() {}
-}
+  }
 
-
+pragma "no doc"
 module MysqlNative {
 
 extern type char = int(8);
@@ -1027,8 +1087,10 @@ extern proc  mysql_close(sock: c_ptr(MYSQL)): c_void_ptr;
 
 }// Mysql Native
 //Helpers
+pragma "no doc"
 extern proc __get_mysql_row_by_number(row: MYSQL_ROW,i: c_int): c_string;
 
+pragma "no doc"
 extern proc __get_mysql_field_name_by_number(fields: c_ptr(MYSQL_FIELD),i: c_int): c_string;
 
 }
