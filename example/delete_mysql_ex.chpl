@@ -4,12 +4,12 @@ use Mysql;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
-    var con = MysqlConnectionFactory("localhost", "root", "teste", "root");        //Open a cursor
+    var con = MysqlConnectionFactory("localhost", "root", "teste", "krishna");        //Open a cursor
     //Open a cursor
     var cursor = con.cursor();
     
     //delete conctact with id =17
-    writeln(cursor.Delete("contacts", "id='7'")  );
+    writeln(cursor.Delete("contacts", "id='6'")  );
 
 //Select 
     cursor.query("SELECT * FROM contacts");

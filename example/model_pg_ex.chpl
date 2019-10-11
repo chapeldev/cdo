@@ -6,21 +6,21 @@ module Main{
         var con = PgConnectionFactory("localhost", "postgres", "teste", "password");
 
 
-        class Company:Model{
+        class Company: Model{
             var id:int;
             var name:string;
 
-            proc Company(){
+            proc init(){
                 this.setup(this);
             }
         }
 
-        class ContactsCampony:Model{
+        class ContactsCampony: Model{
             var id:int;
             var name:string;
             var email:string;
             
-            proc ContactsCampony(){
+            proc init() {
                 this.setTable("contacts");
                 this.setup(this);
             }

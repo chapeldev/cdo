@@ -109,7 +109,7 @@ use Mysql;
 proc main(){
 //Open connection to Mysql database. Parametrs are host,username, database, password
 
-var con = MysqlConnectionFactory("localhost", "root", "teste", "root");
+var con = MysqlConnectionFactory("localhost", "username", "database", "password");
 
 
 //Open a cursor
@@ -118,7 +118,7 @@ var cursor = con.cursor();
 cursor.query("SELECT * FROM contacts");
 //Get one row.
 var res:Row = cursor.fetchone();
-while(res!=nil){
+while(res.isValid()){
 //print the results.
 writeln(res);
 //get the next row one.

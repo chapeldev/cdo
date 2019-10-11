@@ -20,102 +20,90 @@ module Postgres{
     use PostgresNative;
     use IO.FormattedIO;
     use Types;
+    use Map;
+    use List;
 
     require "libpq-fe.h","-lpq";
     require "stdio.h";
 
 
-proc PgConnectionFactory(host:string, user:string="", database:string="", passwd:string=""):Connection{
-
-  return new Connection(new PgConnection(host, user, database, passwd));
+proc PgConnectionFactory(host: string, user: string = "", database: string = "", 
+                        passwd: string = ""): PgConnection {
+    return new PgConnection(host, user, database, passwd);
 }
 
-class PgConnection:ConnectionBase{
+class PgConnection: ConnectionBase {
 
-     var dsn:string;
-     var conn:c_ptr(PGconn);
-    // var mapperDom:domain(string); //When I declare this the compiler says that there is an error
-    // var type_mapper:[mapperDom]string; 
+    var dsn: string;
+    var conn: c_ptr(PGconn);
+    var type_mapper: map(string, string, parSafe = true) ; 
     
-     proc PgConnection(host:string, user:string="", database:string="", passwd:string=""){
-        try{
-            this.dsn="postgresql://%s:%s@%s/%s".format(user,passwd,host,database);
-           // writeln("conecting to ",this.dsn);
-            this.conn = PQconnectdb(this.dsn.localize().c_str());
-            if (PQstatus(conn) != CONNECTION_OK)
-            {
-                var err=new string(PQerrorMessage(conn):c_string);
-                writeln("Connection to database failed: ",err);
-                PQfinish(conn);
-                halt("Error");
-            }
-            this.__registerTypes();
-        }catch{
-                writeln("Postgres Connection to database exception");
+    proc init(host: string, user: string = "", database: string = "", passwd: string = "") {
+        this.dsn = "postgresql://" + user + ":" + passwd + "@" + host + "/" + database;
+        this.conn = nil;
+        this.conn = PQconnectdb(this.dsn.localize().c_str());
+        if (PQstatus(conn) != CONNECTION_OK) {
+            var err = createStringWithNewBuffer(PQerrorMessage(conn): c_string);
+            writeln("Connection to database failed: ",err);
+            PQfinish(conn);
         }
-         
-     }
+        this.complete();
+        this.__registerTypes();
+    }
 
-    proc getNativeConection(): c_ptr(PGconn){
+    proc getNativeConection(): c_ptr(PGconn) {
         return this.conn;   
     }
 
-    proc helloWorld(){
+    proc helloWorld() {
         writeln("Hello from PgConnection");
     }
 
-    proc cursor(){
-        return new Cursor(new PgCursor(this,this.conn));
+    override proc cursor() {
+        return new PgCursor(this, this.conn);
     }
-    proc Begin(){
+
+    override  proc Begin() {
         var res = PQexec(this.conn, "BEGIN");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        {
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             //Todo: Improve error messages
              //PQerrorMessage(conn));
             PQclear(res);
-
-            halt("error");
         }
 
         PQclear(res);
     }
 
-    proc commit(){
-    var res = PQexec(this.conn, "COMMIT");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        {
+    override proc commit() {
+        var res = PQexec(this.conn, "COMMIT");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             //Todo: Improve error messages
              //PQerrorMessage(conn));
             PQclear(res);
-
-            halt("error");
         }
 
         PQclear(res);
     }
-    proc rollback(){
+
+    override proc rollback() {
         var res = PQexec(this.conn, "ROLLBACK");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        {
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             //Todo: Improve error messages
              //PQerrorMessage(conn));
             PQclear(res);
-
-            halt("error");
         }
         PQclear(res);
-
     }
-    proc close(){
+
+    override proc close() {
         PQfinish(this.conn);
     }
 
-    proc table(table:string):QueryBuilder{
+    override proc table(table:string): QueryBuilder{
         return new QueryBuilder(new PgQueryBuilder(this,table));
     }
 
-    proc model():ModelEngine{
+    override proc model(): ModelEngine{
         var engine = new ModelEngine(new Connection(this));
         return engine;
     }
@@ -182,27 +170,24 @@ class PgConnection:ConnectionBase{
 
 }
 
-class PgCursor:CursorBase{
+class PgCursor: CursorBase {
     
-   var con:PgConnection;
-   var pgcon:c_ptr(PGconn);
-   var res:c_ptr(PGresult);
+    var con: PgConnection;
+    var pgcon: c_ptr(PGconn);
+    var res: c_ptr(PGresult);
+    var type_mapper: map(string, string, parSafe = true); 
+    var nFields: int(32);
+    var numRows: int(32);
+    var curRow: int(32) = 0;
 
-   var mapperDom:domain(string); 
-   var type_mapper:[mapperDom]string; 
- 
-   
-   var nFields:int(32);
-   var numRows:int(32);
-   var curRow:int(32)=0;
+    proc init(con:PgConnection, pgcon:c_ptr(PGconn)){
+        this.con = con;
+        this.pgcon = pgcon;
+        this.complete();
+        this.__registerTypes();
+    }
 
-   proc PgCursor(con:PgConnection, pgcon:c_ptr(PGconn)){
-       this.con = con;
-       this.pgcon=pgcon;
-       this.__registerTypes();
-   }
-
-    proc __registerTypes(){
+    proc __registerTypes() {
         this.__registerTypeName(20, "int"); // int8
         this.__registerTypeName(1043, "string"); // macaddr[]
         this.__registerTypeName(21, "int"); // int2
@@ -251,145 +236,139 @@ class PgCursor:CursorBase{
 
     }
 
-    proc __registerTypeName(oid:int, cdo_type:string){
-        this.type_mapper[oid:string]= cdo_type;
+    proc __registerTypeName(oid: int, cdo_type: string) {
+        this.type_mapper[oid:string ]= cdo_type;
     }
-    proc __typeToString(oid:Oid):string{
-        if(this.mapperDom.member(oid:string)){
-            return this.type_mapper[oid:string];
+
+    proc __typeToString(oid: Oid): string{
+        if(this.type_mapper.contains(oid: string)) {
+            return this.type_mapper[oid: string];
         }
-        return oid:string;        
+        return oid: string;        
     }
    
 
-    proc rowcount():int(32){
+    override proc rowcount(): int(32) {
         return this.numRows;
     }
 
 
-    proc callproc(){
-
+    proc callproc() {
     }
 
-    proc close(){
-
+    override proc close() {
         PQclear(this.res);    
     }
 
-    proc execute(query:string, params){
-        try{
+    override proc execute(query: string, params){
+        try {
             this.execute(query.format((...params)));
-        }catch{
+        }
+        catch {
             writeln("Error");
         }
     }
 
-    proc execute(query:string){
+    override proc execute(query: string) {
         this.res = PQexec(this.pgcon, query.localize().c_str());
-        if (PQresultStatus(res) !=  PGRES_COMMAND_OK)
-        {
-            var err = new string(PQerrorMessage(this.pgcon):c_string);
-            writeln("Failed to fetch results: ",err);
+        if (PQresultStatus(res) !=  PGRES_COMMAND_OK) {
+            var err = createStringWithNewBuffer(PQerrorMessage(this.pgcon): c_string);
+            writeln("Failed to fetch results: ", err);
             PQclear(res);
-            PQfinish(this.pgcon);       
-            halt("Error");
+            PQfinish(this.pgcon);
         }
 
         this.__removeColumns();
         this.nFields = PQnfields(this.res);
 
-        var ii:int(32)=0;
+        var ii: int(32 ) = 0;
         while ( ii < nFields){    
-            var colname = new string(PQfname(this.res, ii:c_int));
-            var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
+            var colname = createStringWithNewBuffer(PQfname(this.res, ii: c_int));
+            var coltype = this.__typeToString(PQftype(this.res,ii: c_int));
             //this.con.__typeToString(PQftype(this.res,ii:c_int):int
-            this.__addColumn(ii,colname, coltype );
-            ii+=1;
-        }
-        this.numRows =PQntuples(res):int(32);
-        this.curRow=0;
-    }
-
-    proc query(query:string){
-          this.res = PQexec(this.pgcon, query.localize().c_str());
-        if (PQresultStatus(res) != PGRES_TUPLES_OK)
-        {
-            var err = new string(PQerrorMessage(this.pgcon):c_string);
-            writeln("Failed to fetch results: ",err);
-            PQclear(res);
-            PQfinish(this.pgcon);       
-            halt("Error");
-            //return -1;
-        }
-
-        this.__removeColumns();
-        this.nFields = PQnfields(this.res);
-
-        var ii:int(32)=0;
-        while ( ii < nFields){    
-            var colname = new string(PQfname(this.res, ii:c_int));
-            var coltype = this.__typeToString(PQftype(this.res,ii:c_int));
-            this.__addColumn(ii,colname, coltype );
+            this.__addColumn(ii,colname, coltype);
             ii += 1;
         }
-        this.numRows =PQntuples(res):int(32);
-        this.curRow=0;
-        //return this.numRows;
-   }
+        this.numRows = PQntuples(res): int(32);
+        this.curRow = 0;
+    }
 
-    proc query(query:string, params){
-        try{
+    override proc query(query: string) {
+        this.res = PQexec(this.pgcon, query.localize().c_str());
+        if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+            var err = createStringWithNewBuffer(PQerrorMessage(this.pgcon): c_string);
+            writeln("Failed to fetch results: ",err);
+            PQclear(res);
+            PQfinish(this.pgcon);
+        }
+
+        this.__removeColumns();
+        this.nFields = PQnfields(this.res);
+
+        var ii: int(32) = 0;
+        while (ii < nFields) {    
+            var colname = createStringWithNewBuffer(PQfname(this.res, ii: c_int));
+            var coltype = this.__typeToString(PQftype(this.res,ii: c_int));
+            this.__addColumn(ii,colname, coltype);
+            ii += 1;
+        }
+        this.numRows = PQntuples(res): int(32);
+        this.curRow = 0;
+        //return this.numRows;
+    }
+
+    override proc query(query: string, params) {
+        try {
             this.query(query.format((...params)));
-        }catch{
+        }
+        catch {
             writeln("Error");
         }
     }
 
-    proc dump(){
+    override proc dump() {
         var res = this.res;
-        var  i=0;
-        var j=0;
+        var  i = 0;
+        var j = 0;
         var row = "";
-        var rows = PQntuples(res):int;
-        while ( i < rows)
-        {       
-            j=0;
-            while(j < this.nFields){
-                row = new string(PQgetvalue(res, i:c_int, j:c_int):c_string);
-
-            // printf("\t%s".localize().c_str(),PQgetvalue(res,  i:c_int, j:c_int));
+        var rows = PQntuples(res): int;
+        while ( i < rows) {       
+            j = 0;
+            while(j < this.nFields) {
+                row = createStringWithNewBuffer(PQgetvalue(res, i: c_int, j: c_int): c_string);
+                // printf("\t%s".localize().c_str(),PQgetvalue(res,  i:c_int, j:c_int));
                 write("\t",row);
-           //write("\t",PQgetvalue(res,  i:c_int, j:c_int):string);
-           
-                j+=1;
+                //write("\t",PQgetvalue(res,  i:c_int, j:c_int):string);
+                j += 1;
             }       
             writeln("\n");
-            i+=1;
+            i += 1;
         }
     }
     
-    proc executemany(str:string, data:[?D]?eltType){
-        try{
-           for datum in data{
-               writeln(str.format((...datum)));
-           }
-        }catch{
+    proc executemany(str:string, data: [?D]?eltType) {
+        try {
+            for datum in data{
+                writeln(str.format((...datum)));
+            }
+        }
+        catch {
             writeln("Error");
         }
     }
 
-    proc fetchrow(idx:int):Row{
-        if(idx > this.rowcount()){
-            return nil;
+    proc fetchrow(idx:int): owned Row {
+        if(idx > this.rowcount()) {
+            return new Row(valid = false);
         }
-        var row = new Row();
+        var row = new Row(valid = true);
        
         var j:int(32)=0;
 
         this.curRow = idx:int(32);
 
-        while(j < this.nFields){
-                var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
+        while(j < this.nFields) {
+                var datum = createStringWithNewBuffer(PQgetvalue(res, this.curRow: c_int, j: c_int): c_string);
                 var colinfo = this.getColumnInfo(j);
                 //this.__addColumn(ii,colname, coltype );
                 row.addData(colinfo.name,datum,colinfo.coltype);
@@ -399,132 +378,139 @@ class PgCursor:CursorBase{
         return row;
     }
 
-    proc this(idx:int):Row{
-
+    override proc this(idx:int): owned Row {
         return this.fetchrow(idx);
     }
 
-    iter these()ref:Row{
+    override iter these()ref: owned Row {
         for row in this.fetchall(){
             yield row;
         }
     }
 
-    proc fetchone():Row{
+    override proc fetchone(): owned Row {
         if(this.curRow==this.numRows){
-           return nil;
+            return new Row(valid = false);
         }
-       var row = new Row();
-       
-       var j:int(32)=0;
-       while(j < this.nFields){
-                var datum = new string(PQgetvalue(res, this.curRow:c_int, j:c_int):c_string);
-                var colinfo = this.getColumnInfo(j);
-                 row.addData(colinfo.name,datum,colinfo.coltype);
-                j += 1;
+        var row = new Row(valid = true);
+
+        var j:int(32)=0;
+        while(j < this.nFields){
+            var datum = createStringWithNewBuffer(PQgetvalue(res, this.curRow: c_int, j: c_int): c_string);
+            var colinfo = this.getColumnInfo(j);
+            row.addData(colinfo.name,datum,colinfo.coltype);
+            j += 1;
         }
         this.curRow += 1;
         return row;
     }
-    iter fetchmany(count:int=0):Row {
-        if(count<=0){
 
+    override iter fetchmany(count: int = 0): owned Row {
+        if(count <= 0) {
             for row in this.fetchall(){
                 yield row;
-            } 
-             
-        }else{
-            var idx=0;
-            var res:Row = this.fetchone();    
-            while((res!=nil)&&(idx<this.rowcount())&&(idx<count)){
+            }
+        }
+        else {
+            var idx = 0;
+            var res: Row = this.fetchone();    
+            while( res.isValid() &&  idx < this.rowcount( )&& idx < count) {
                 yield res;
                 res = this.fetchone();
-                idx+=1;
+                idx += 1;
             }
         }
     }
-    iter fetchall():Row{
-        //var rowsDomain:domain(1)={0..1};
-        //var rows:[rowsDomain]Row;
 
-        var res:Row = this.fetchone();
-        while(res!=nil){
+    override iter fetchall(): owned Row {
+        var res: Row = this.fetchone();
+        while(res.isValid()) {
             yield res;
             res = this.fetchone();
         }
-        
     }
 
-    proc next():Row{
+    override proc next(): owned Row {
         return this.fetchone();
     }
 
-    proc messages(){
+    proc messages() {
 
     }
-    proc __quote_columns(colname:string):string{
+
+    proc __quote_columns(colname: string): string {
         if(colname=="*"){
             return "*";
         }
 
-        return "\""+colname+"\"";
+        return "\"" + colname + "\"";
     }
-    proc __quote_values(value:string):string{
-        return "'"+value+"'";
+
+    proc __quote_values(value: string): string {
+        return "'" + value + "'";
     }
-    proc insertRecord(table:string, ref el:?eltType):string{
+
+    override proc insertRecord(table: string, ref el: ?eltType): string {
 
         var cols = this.__objToArray(el);
         return this.insert(table, cols);       
     }
-    proc insert(table:string, data:[?D]string):string{
-        var colset:[{1..0}]string;
-        var valset:[{1..0}]string;
 
-         for idx in D{
-            colset.push_back(this.__quote_columns(idx));
-            valset.push_back(this.__quote_values(data[idx]));
+    override proc insert(table: string, data: map(string, string, parSafe = true)): string {
+        var colset: list(string);
+        var valset: list(string);
+
+         for idx in data {
+            colset.append(this.__quote_columns(idx));
+            valset.append(this.__quote_values(data[idx]));
         }
-        var cols_part = ", ".join(colset);
-        var vals_part = ", ".join(valset);
-        var sql="";
-        try{
+        var cols_part = ", ".join(colset.toArray());
+        var vals_part = ", ".join(valset.toArray());
+        var sql = "";
+        try {
             sql = "INSERT INTO %s(%s) VALUES(%s) ".format(table, cols_part, vals_part);
-        }catch{
+        }
+        catch {
             writeln("Error on building insert query");
         }
-         this.execute(sql);
-         return sql;
-    }
-    proc update(table:string, whereCond:string, data:[?D]string):string{
-        var colvalset:[{1..0}]string; 
-        for idx in D{
-            colvalset.push_back(this.__quote_columns(idx)+" = "+this.__quote_values(data[idx]));
-        }
-        var colsvals_part = ", ".join(colvalset);
-        var sql="";
-        try{
-            sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
-        }catch{
-            writeln("Error on building update query");
-        }
-         this.execute(sql);
-         return sql;
+        this.execute(sql);
+        return sql;
     }
 
-    proc update(table:string, whereCond:string, ref el:?eltType):string{
+    override proc update(table: string, whereCond: string, 
+                data: map(string, string, parSafe = true)): string 
+    {
+        var colvalset: list(string); 
+        for idx in data {
+            colvalset.append(this.__quote_columns(idx) + " = " + this.__quote_values(data[idx]));
+        }
+        var colsvals_part = ", ".join(colvalset.toArray());
+        var sql = "";
+        try {
+            sql = "UPDATE %s SET %s WHERE (%s)".format(table, colsvals_part, whereCond);
+        }
+        catch {
+            writeln("Error on building update query");
+        }
+        this.execute(sql);
+        return sql;
+    }
+
+    proc update(table: string, whereCond: string, ref el: ?eltType): string {
         var cols = this.__objToArray(el);
         return this.update(table, whereCond, cols);
     }
 
-    proc updateRecord(table:string, whereCond:string, ref el:?eltType):string{
+    override proc updateRecord(table: string, whereCond: string, ref el: ?eltType): string {
         return this.update(table,whereCond,el);
     }
-    proc Delete(table:string, whereCond:string):string{
-        var sql ="";
-        try{
+
+    override proc Delete(table: string, whereCond: string): string {
+        var sql = "";
+        try {
             sql = "DELETE FROM %s WHERE (%s)".format(table,whereCond);
-        }catch{
+        }
+        catch {
             writeln("Error on formating delete statement");
         }
         this.execute(sql);
@@ -541,24 +527,23 @@ class PgQueryBuilder: QueryBuilderBase{
    var _orderby_declared:bool=false;
    var _operation_type:string;
 
-   proc PgQueryBuilder(con:PgConnection, table:string){
+   proc init(con:PgConnection, table:string){
        this.conn = con;       
        this.From(table);
        this.table=table;
        this.cursor = con.cursor();
    }
 
-   iter Get():Row{
-    this.cursor.query(this.compileSql());
-
-        var res:Row = this.cursor.fetchone();
-        while(res!=nil){
+    iter Get(): owned Row {
+        this.cursor.query(this.compileSql());
+        var res: Row = this.cursor.fetchone();
+        while(res.isValid()) {
             yield res;
             res = this.cursor.fetchone();
         }
 
-    //yield this.cursor.fetchone();     
-   }
+        //yield this.cursor.fetchone();     
+    }
 
    proc getOneAsRecord(ref obj:?eltType):eltType{
        //writeln(this.toSql());
