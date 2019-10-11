@@ -1,0 +1,164 @@
+.. default-domain:: chpl
+
+.. module:: Mysql
+
+Mysql
+=====
+**Usage**
+
+.. code-block:: chapel
+
+   use Mysql;
+
+.. function:: proc MysqlConnectionFactory(host: string, user: string = "", database: string = "", passwd: string = ""): MysqlConnection
+
+   Creates a connection to the MySQL server and returns a :class:`MysqlConnection` object
+   
+   :arg host: The host name or IP address of the MySQL server.
+   :type host: `string`
+   :arg user: The user name used to authenticate with the MySQL server.
+   :type user: `string`
+   :arg database: The database name to use when connecting with the MySQL server.
+   :type database: `string`
+   :arg passwd: The password to authenticate the user with the MySQL server.
+   :type passwd: `string`
+   
+
+.. class:: MysqlConnection : ConnectionBase
+
+   .. method:: override proc cursor()
+
+      This method returns a :class:`MysqlCursor` object.
+      The returned object is a CursorBase instance.
+      
+
+   .. method:: override proc Begin()
+
+      This method starts a transaction. You must commit after every transaction that 
+      modifies data for tables that use transactional storage engines.
+      
+
+   .. method:: override proc commit()
+
+      This method sends a COMMIT statement to the MySQL server, committing the current 
+      transaction. By default Connector/Chapel does autocommit, but call this method 
+      after every transaction that modifies data for tables that use transactional 
+      storage engines.
+      
+
+   .. method:: override proc rollback()
+
+      This method sends a ROLLBACK statement to the MySQL server, undoing all data 
+      changes from the current transaction.
+      
+
+   .. method:: override proc setAutocommit(commit: bool)
+
+      This method can be used to assign a value of True or False to enable or 
+      disable the autocommit feature of MySQL.
+      
+       :arg commit: Value to enable or disable the autocommit.
+       :type commit: `bool`
+      
+
+   .. method:: proc isAutoCommit(): bool
+
+      This method can be called to retrieve the current autocommit setting.
+      
+
+   .. method:: override proc close()
+
+      This method tries to send a QUIT command and close the socket. 
+      It raises no exceptions.
+      
+
+.. class:: MysqlCursor : CursorBase
+
+   .. method:: proc rowcount(): int(32)
+
+      This method returns the number of rows returned for SELECT statements, 
+      or the number of rows affected by DML statements such as INSERT or UPDATE. 
+      
+
+   .. method:: override proc close()
+
+      This method closes the cursor, resets all results, and ensures that the 
+      cursor object has no reference to its original connection object.
+      
+
+   .. method:: override proc execute(query: string, params)
+
+      This method executes the given database operation (query or command). 
+      The parameters found in the tuple params are bound to the variables in the operation.
+      Specify variables using '%s' parameter style
+      
+
+   .. method:: override proc execute(query: string)
+
+      This method executes the given database operation (query or command).
+      
+
+   .. method:: override proc query(query: string)
+
+      This method executes the given database query.
+      
+
+   .. method:: override proc query(query: string, params)
+
+      This method executes the given database query.The parameters found in the 
+      tuple params are bound to the variables in the operation. Specify variables 
+      using '%s' parameter style
+      
+
+   .. method:: override proc this(idx: int): owned Row
+
+      Rows can be indexed
+
+   .. itermethod:: override iter these() ref
+
+      This method returns an iterator to rows.
+      
+
+   .. method:: override proc fetchone(): owned Row
+
+      This method retrieves the next row of a query result set and returns a valid row, 
+      or invalid row(can be checked using `Row.isValid()`) if no more rows are available.
+      
+
+   .. itermethod:: override iter fetchmany(count: int = 0): owned Row
+
+      This method fetches the next set of rows of a query result and returns an iterator.
+      
+
+   .. itermethod:: override iter fetchall(): owned Row
+
+      The method fetches all (or all remaining) rows of a query result set and returns 
+      an iterator.
+      
+
+   .. method:: override proc next(): owned Row
+
+      This method retrieves the next row of a query result set and returns a valid row, 
+      or invalid row(can be checked using `Row.isValid()`) if no more rows are available.
+      
+
+   .. method:: override proc insertRecord(table: string, ref el: ?eltType): string
+
+      This methods insert an object to the given table
+      
+
+   .. method:: proc update(table: string, whereCond: string, ref el: ?eltType): string
+
+      This methods updates a table with the given object based on specified condition
+      
+
+   .. method:: override proc updateRecord(table: string, whereCond: string, ref el: ?eltType): string
+
+      This methods updates a table with the given object based on specified condition
+      
+
+   .. method:: override proc Delete(table: string, whereCond: string): string
+
+      This method deletes rows of th table based on the given condition
+      
+
