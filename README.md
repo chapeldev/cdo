@@ -22,11 +22,15 @@ On Ubuntu do:
 sudo apt-get install libpq-dev
 ```
 3. Go to example/expq.chpl and inform database host, user, password. 
-4. Go to repository folder and compile:
+4. Import database
+```bash
+psql teste < postgreData.sql 
+```
+5. Go to repository folder and compile:
 ```bash
 make pgsql
 ```
-5. Run the example:
+6. Run the example:
 ```bash
 ./expq
 ```
@@ -117,8 +121,8 @@ var cursor = con.cursor();
 //Queries from database
 cursor.query("SELECT * FROM contacts");
 //Get one row.
-var res:Row = cursor.fetchone();
-while(res.isValid()){
+var res: Row? = cursor.fetchone();
+while(res != nil){
 //print the results.
 writeln(res);
 //get the next row one.

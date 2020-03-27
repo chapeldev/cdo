@@ -12,23 +12,33 @@ proc main(){
         //Queries from database
         cursor.query("SELECT * FROM contacts"); 
         //Get one row.
-        var res: Row = cursor.fetchone();
-        while(res.isValid()){
+        var res: Row? = cursor.fetchone();
+        if(res != nil) {
+            try! {
+            const r = res: shared Row;
+            writeln("name = ", r["name"]," email = ", r["email"] );
+            }
+        }
+        while(res != nil){
             //print the results.
             writeln(res);
+             
             //get the next row one.
             res = cursor.fetchone();
+
         }
 
         // Queries passing tuple to formated query string.
         cursor.query("SELECT %s, %s FROM contacts",("email","name"));
         // writeln(cursor);
         // iterate over all rows
-        for row in cursor{
+        for row in cursor {
+            res = row;
             //get row data by column name and print it.
             writeln("name = ", row["name"]," email = ", row["email"] );
         }
-
+        writeln("Checking ");
+        writeln("name = ", res!["name"]," email = ", res!["email"] );
         cursor.query("SELECT * FROM contacts");
 
         // iterate over all rows

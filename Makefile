@@ -29,7 +29,7 @@ pgsql:
 
 #WArning, you should run `mysql_config --cflags --libs` in order to know the library path
 mysqlex:
-	chpl -o ./bin/mysqlex ./example/exmysql.chpl ./src/mysql_helper.c ./src/mysql_helper.c    -M ./src -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
+	chpl -o ./bin/mysqlex ./example/exmysql.chpl ./src/mysql_helper.c ./src/mysql_helper.c    -M ./src -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -lssl -lcrypto -ldl
 
 update_mysql_ex:
 	chpl -o ./bin/update_mysql_ex ./example/update_mysql_ex.chpl  -M ./src  ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl

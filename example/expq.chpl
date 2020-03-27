@@ -13,8 +13,8 @@ module Main{
         //Queries from database
         cursor.query("SELECT * FROM public.contacts"); 
         //Get one row.
-        var res: Row = cursor.fetchone();
-        while(res.isValid()) {
+        var res: Row? = cursor.fetchone();
+        while(res != nil) {
             //print the results.
             writeln(res);
             //get the next row one.

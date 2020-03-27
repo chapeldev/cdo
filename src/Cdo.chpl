@@ -40,7 +40,7 @@ module Cdo{
 
     use Reflection;
     use Regexp;
-
+    use IO;
     use CDOutils;
     use Map;
     use List;
@@ -305,272 +305,247 @@ module Cdo{
     }
 
     class Row {
+      pragma "no doc"
+      var data: map(string,string,parSafe=true);
+    
+      pragma "no doc"
+      var dataType: map(string,string,parSafe=true);
 
-        pragma "no doc"
-        var data: map(string,string,parSafe=true);
+      proc hasColumn(colname: string): bool {
+        return this.data.contains(colname);
+      }
+
+      /*
+      `addData` adds in an associative array the column and its correspondent data.
+        :arg colname: `string` name of the column.
+        :type colname: `string`
+
+        :arg datum: `string` data returned.
+        :type datum: `string`
         
-        pragma "no doc"
-        var dataType:map(string,string,parSafe=true);
+      */
+      proc addData(colname: string, datum: string, dtype: string = "string") {
+        this.data[colname] = datum;
+        this.dataType[colname] = dtype;
+      }
 
-        pragma "no doc"
-        var valid: bool;
+      /*
+        `get` gets the data from column name.
+            :arg colname: `string` name of the column.
+            :type colname: `string`
 
-
-        proc isValid(): bool {
-            return valid;
-        }
-        proc hasColumn(colname:string):bool{
-            return this.data.contains(colname);
-        }
-        /*
-        `addData` adds in an associative array the column and its correspondent data.
-                :arg colname: `string` name of the column.
-                :type colname: `string`
-
-                :arg datum: `string` data returned.
-                :type datum: `string`
-            
-        */
-
-        proc addData(colname:string, datum:string, dtype:string="string"){
-            this.data[colname] = datum;
-            this.dataType[colname] = dtype;
-        }
-        /*
-            `get` gets the data from column name.
-                :arg colname: `string` name of the column.
-                :type colname: `string`
-
-            :return: data value of the column `colname`.
-            :rtype: `string`
-            
-        */
+        :return: data value of the column `colname`.
+        :rtype: `string`
         
-        proc get(colname:string){
-            
-            if(this.data.contains(colname)){
-                
-                return this.data[colname];
-            }else{
-                
-                return "";
+      */
+      proc get(colname: string) {
+        if(this.data.contains(colname)) {      
+          return this.data[colname];
+        }
+        else {
+          return "";
+        }
+      }
+
+      proc getArray(colname: string, array_header_trail: string = "{}", 
+                    separator: string = ",", strip_comma: bool = true) {
+    
+        var ret: list(string);
+        if(this.data.contains(colname)) {
+          var strtype = this.getType(colname);
+          var value = this.data[colname]; 
+          if(value.startsWith(array_header_trail[1]) && 
+            value.endsWith(array_header_trail[2]) && strtype.endsWith("array")) {
+            var sz = value.size;
+            var values = value[2..(value.size-1)];
+            var rett = values.split(",");
+            for r in rett {
+              if(r.startsWith("\"") && r.endsWith("\"") && strip_comma) {
+                ret.append(r[2..(r.size-1)]);
+              }
+              else ret.append(r);
             }
+            return ret;
+          }            
+          ret.append(value);
+          return ret;
         }
-
-
-        proc getArray(colname: string, array_header_trail: string = "{}", 
-                        separator: string = ",", strip_comma: bool = true) {
-            var ret: list(string);
-
-            if(this.data.contains(colname)) {
-
-                var strtype = this.getType(colname);
-
-                var value = this.data[colname]; 
-
-                if(value.startsWith(array_header_trail[1]) && 
-                value.endsWith(array_header_trail[2]) && strtype.endsWith("array")) {
-                    var sz = value.length;
-                    var values = value[2..(value.length-1)];
-                    var rett = values.split(",");
-                    for r in rett {
-                        if(r.startsWith("\"") && r.endsWith("\"") && strip_comma) {
-                            ret.append(r[2..(r.length-1)]);
-                        }
-                        else ret.append(r);
-                    }
-                    return ret;
-                }            
-                ret.append(value);
-                return ret;
-            }else{
-                return ret;
-            }
+        else {
+          return ret;
         }
+      }
 
-
-
-        proc getType(colname:string):string{
-            if(this.dataType.contains(colname)){
-                return this.dataType[colname];
-            }else{
-                return "";
-            }
+      proc getType(colname: string): string {
+        if(this.dataType.contains(colname)) {
+          return this.dataType[colname];
+        } 
+        else {
+          return "";
         }
+      }
 
+      /*
+        `this[colname]` gets the data from column name.
+        :arg colname: `string` name of the column.
+        :type colname: `string`
 
-
-        /*
-            `this[colname]` gets the data from column name.
-                :arg colname: `string` name of the column.
-                :type colname: `string`
-
-            :return: data value of the column `colname`.
-            :rtype: `string`
-            
-        */
-
-
-        proc this(colname:string):string{
-            return this.get(colname);
-        }
-        /*
-            `this[colnum]` gets the data from column number.
-                :arg colnum: `int` number of the column.
-                :type colnum: `int`
-
-            :return: data value of the column `colnum`.
-            :rtype: `string`
-            
-        */
-
-        proc this(colnum:int):string{
-            var i = 1;
-            for idx in this.data{
-                if(i == colnum){
-                    return this.data[idx];
-                }
-                i+=1;
-            }
-            return "";
-        }
-        pragma "no doc"
-        override proc writeThis(f: channel){
-            try{
-                for col in this.data{
-                    f.writeln(col,": ",this.data[col]);
-                }
-            }catch{
-                writeln("Cannot Write Row");//todo: improves messages with log
-            }
-        }
+        :return: data value of the column `colname`.
+        :rtype: `string`
         
-        override proc readThis(f: channel) {
-            f.read(false);
+      */
+      proc this(colname: string): string {
+        return this.get(colname);
+      }
+
+      /*
+        `this[colnum]` gets the data from column number.
+        :arg colnum: `int` number of the column.
+        :type colnum: `int`
+
+        :return: data value of the column `colnum`.
+        :rtype: `string`
+        
+      */
+      proc this(colnum:int): string {
+        var i = 1;
+        for idx in this.data {
+          if(i == colnum) {
+            return this.data[idx];
+          }
+          i+=1;
         }
+        return "";
+      }
+
+      pragma "no doc"
+      override proc writeThis(f: channel) {
+        try {
+          for col in this.data {
+            f.writeln(col,": ",this.data[col]);
+          }
+        }catch {
+          writeln("Cannot Write Row");//todo: improves messages with log
+        }
+      }
+    
+      override proc readThis(f: channel) {
+        f.read(false);
+      }
 
     }
 
+    record ModelRelationInfo {
+      var relType: string;
+      var localKey: string;
+      var remoteKey: string;
+      var remoteTable: string;
+      var pivotTable: string;
 
+      proc init() {}
 
-
-
-    record ModelRelationInfo{
-        
-        var relType:string;
-        var localKey:string;
-        var remoteKey:string;
-        var remoteTable:string;
-        var pivotTable:string;
-
-        proc __CDO_ModelRelationInfo(relType:string){
-                this.relType = relType;
-        }
-
-
+      proc init(relType: string){
+        this.relType = relType;
+      }
     };
 
-    class Model{
+    class Model {
         
-        var __cdo_table:string;
-        var __cdo_pk:string;
-        var __cdo_cofig: map(string, string, parSafe=true);
-        // var __cdo_con:ConnectionBase;
-        // var __cdo_qb:QueryBuilder;
+      var __cdo_table: string;
+      var __cdo_pk: string;
+      var __cdo_cofig: map(string, string, parSafe=true);
+      // var __cdo_con:ConnectionBase;
+      // var __cdo_qb:QueryBuilder;
 
-        var __cdo_rel_mapping: map(string,ModelRelationInfo,parSafe=true);
+      var __cdo_rel_mapping: map(string, ModelRelationInfo, parSafe=true);
 
-        proc __cdo_mapRelation(relationType:string, fieldName:string, localKey:string,
-                                remoteKey:string="id", pivotTable:string=""){
-            if(this.__cdo_rel_mapping.contains(fieldName)){
-
-                this.__cdo_rel_mapping[fieldName].localKey = localKey;
-                this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
-                this.__cdo_rel_mapping[fieldName].relType = relationType;
-                this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
-
-            }else{
-
-                this.__cdo_rel_mapping[fieldName] = new __CDO_ModelRelationInfo(relationType);
-                this.__cdo_rel_mapping[fieldName].localKey = localKey;
-                this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
-                this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
-
-            }
+      proc __cdo_mapRelation(relationType: string, fieldName: string, localKey: string,
+                            remoteKey: string = "id", pivotTable: string = "") {
+        if(this.__cdo_rel_mapping.contains(fieldName)) {
+          this.__cdo_rel_mapping[fieldName].localKey = localKey;
+          this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
+          this.__cdo_rel_mapping[fieldName].relType = relationType;
+          this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
+        } else {
+          this.__cdo_rel_mapping[fieldName] = new ModelRelationInfo(relationType);
+          this.__cdo_rel_mapping[fieldName].localKey = localKey;
+          this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
+          this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
         }
+      }
 
-        proc __cdo_hasRelationMap(fieldname:string):bool{
-            return this.__cdo_rel_mapping.contains(fieldname);
-        }
-        proc __cdo_getRelationMap(fieldName):ModelRelationInfo{
-            return this.__cdo_rel_mapping[fieldName];
-        }
+      proc __cdo_hasRelationMap(fieldname: string): bool {
+        return this.__cdo_rel_mapping.contains(fieldname);
+      }
 
-        proc mapBelongsTo(fieldName:string, localKey:string,remoteKey:string="id"){
-            this.__cdo_mapRelation("belongsTo",fieldName,localKey,remoteKey);
-        }
+      proc __cdo_getRelationMap(fieldName): ModelRelationInfo {
+        return this.__cdo_rel_mapping[fieldName];
+      }
 
-        proc setTable(table:string){
-            this.__cdo_table = table;
-        }
-        proc getTable():string{
-            return this.__cdo_table;
-        }
+      proc mapBelongsTo(fieldName: string, localKey: string,remoteKey: string = "id") {
+        this.__cdo_mapRelation("belongsTo",fieldName,localKey,remoteKey);
+      }
 
-        // proc setConnection(con:ConnectionBase){
-        //     this.__cdo_con =con;
-        // }
-        // proc getConnection():ConnectionBase{
-        //     return this.__cdo_con;
-        // }
-        // proc setQueryBuilder(qb:QueryBuilder){
-        //     this.__cdo_qb = qb;
-        // }
-        // proc getQueryBuilder():QueryBuilder{
-        //     return this.__cdo_qb;
-        // }
-        proc setPK(pkname:string){
-            this.__cdo_pk = pkname;
+      proc setTable(table: string) {
+        this.__cdo_table = table;
+      }
+
+      proc getTable(): string {
+        return this.__cdo_table;
+      }
+
+      // proc setConnection(con: ConnectionBase) {
+      //     this.__cdo_con =con;
+      // }
+      
+      // proc getConnection(): ConnectionBase {
+      //     return this.__cdo_con;
+      // }
+    
+      // proc setQueryBuilder(qb: QueryBuilder) {
+      //     this.__cdo_qb = qb;
+      // }
+    
+      //proc getQueryBuilder(): QueryBuilder {
+      //  return this.__cdo_qb;
+      //}
+    
+      proc setPK(pkname: string) {
+        this.__cdo_pk = pkname;
+      }
+    
+      proc getPK(): string {
+        return this.__cdo_pk;
+      }
+    
+      /*proc Config(key: string) {
+        if(__cdo_configDom.member(key)) {
+            return this.__cdo_cofig[key];
         }
-        proc getPK():string{
-            return this.__cdo_pk;
+        return "";
+      }
+    
+      proc Config(key:string, value: string) {
+        this.__cdo_cofig[key] = value;
+      }
+      */
+
+      proc setup(self: ?eltType) {
+        var tablename: string = cdoTitleToSneak(eltType: string);
+        if(this.getTable().size == 0) {
+          this.setTable(tablename);
         }
-        
-        /*proc Config(key:string){
-            if(__cdo_configDom.member(key)){
-                return this.__cdo_cofig[key];
-            }
-            return "";
+        if(this.getPK().size == 0){
+          this.setPK("id");
         }
-        proc Config(key:string, value:string){
-            this.__cdo_cofig[key]=value;
-        }
-        */
+      }
 
-        proc setup(self:?eltType){
-            
-            var tablename:string = cdoTitleToSneak(eltType:string);
+      proc belongsTo(obj: ?eltType, local_key: string, foreign_key: string) {
+    
+      }
 
-            if(this.getTable().length == 0){
-                this.setTable(tablename);
-            }
-            if(this.getPK().length == 0){
-                this.setPK("id");
-            }
-
-
-
-        }
-
-        proc belongsTo(obj:?eltType, local_key:string, foreign_key:string){
-
-        }
-
-        proc printType(){
-            writeln(this.type:string);
-        }
-        
-        
+      proc printType() {
+        writeln(this.type: string);
+      }
     }
 
 
@@ -637,14 +612,14 @@ module Cdo{
                     
                 
 
-                    var sz = value.length;
+                    var sz = value.size;
                     
-                    var values = value[2..(value.length-1)];
+                    var values = value[2..(value.size-1)];
                     
                     var rett = values.split(",");
                     for r in rett{
                         if(r.startsWith("\"")&&r.endsWith("\"")&&strip_comma){
-                            r = r[2..(r.length-1)];
+                            r = r[2..(r.size-1)];
                         }
                     }
 
@@ -693,472 +668,458 @@ module Cdo{
     /*
     The `ColumnInfo` class holds infomration about returned columns.
     */
-    record ColumnInfo{
-        pragma "no doc"
-        var coltype:string;
-        pragma "no doc"
-        var colnum:int(32);
-        pragma "no doc"
-        var name:string;
+    record ColumnInfo {
+      pragma "no doc"
+      var coltype: string;
+      pragma "no doc"
+      var colnum: int(32);
+      pragma "no doc"
+      var name: string;
     }
+
     /*
     The `ConnectionBase` class is provides an interface-like for the database Driver developers for Cto  
     All database drivers/connectors need to inherit this class and override non-helper methods.
     */
-    class ConnectionBase{
+    class ConnectionBase {
 
-        /*
-            The method `cursor` creates a cursor to query and retrieve results from database. 
-            
-            :return: result cursor .
-            :rtype: `Cursor`
-        */
-
-        proc cursor(): Cursor {
-            return nil;
-        }
-        pragma "no doc"
-        proc getNativeConection():opaque{
-
-            //todo:
-            return nil;
-
-        }
-
-        pragma "no doc"
-
-        proc Begin(){
-
-        }
-
-        pragma "no doc"
-        proc commit(){
-
-        }
-        pragma "no doc"
-        proc rollback(){
-
-        }
-        pragma "no doc"
-        proc close(){
-
-        }
-
-        proc setAutocommit(commit:bool){
-
-        }
-
-
-        pragma "no doc"
-        proc helloWorld(){
-            writeln("Hello from ConnectionBase");
-        }
-
-        proc table(table:string):QueryBuilder{
-            return nil;
-        }
-        proc Table(table:string):QueryBuilder{
-            return nil;
-        } 
+      /*
+        The method `cursor` creates a cursor to query and retrieve results from database. 
         
-        
-        proc model():ModelEngine{
-            return nil;
-        }
+        :return: result cursor .
+        :rtype: `Cursor`
+      */
+      proc cursor(): Cursor? {
+        return nil;
+      }
+    
+      pragma "no doc"
+      proc getNativeConection(): opaque {
+        //todo:
+        return nil;
+
+      }
+
+      pragma "no doc"
+      proc Begin() {
+      }
+
+      pragma "no doc"
+      proc commit() {
+      }
+    
+      pragma "no doc"
+      proc rollback() {
+      }
+
+      pragma "no doc"
+      proc close() { 
+
+      }
+
+      proc setAutocommit(commit: bool) {
+
+      }
+
+      pragma "no doc"
+      proc helloWorld() {
+        writeln("Hello from ConnectionBase");
+      }
+
+      proc table(table: string): QueryBuilder? {
+        return nil;
+      }
+
+      proc Table(table:string): QueryBuilder? {
+        return nil;
+      } 
+    
+      proc model(): ModelEngine? {
+        return nil;
+      }
 
     }
+
     /*
     The `CursorBase` is the interface-like base class that treats queries and returned result from database. 
     All database driver cursors should implement its methods inheriting from this class 
     */
-    class CursorBase{
+    class CursorBase {
 
-        pragma "no doc"    
-        var columns: map(int(32), ColumnInfo,parSafe=true);
-        /*
+      pragma "no doc"    
+      var columns: map(int(32), ColumnInfo, parSafe = true);
+
+      /*
         `__addColumn` is a helper method that adds column infomrations to column result list.
-                :arg colnum: `int` number of the column.
-                :type colnum: `int`
-                
-                :arg colname: `string` name of the column.
-                :type colname: `string`
+          :arg colnum: `int` number of the column.
+          :type colnum: `int`
+            
+          :arg colname: `string` name of the column.
+          :type colname: `string`
 
-                :arg coltype: `string` type of the column.
-                :type coltype: `string`
+          :arg coltype: `string` type of the column.
+          :type coltype: `string`
+      */
+      proc __addColumn(colnum: int(32), colname: string, coltype: string = "") {
+        this.columns[colnum] = new ColumnInfo(name = colname, colnum = colnum, coltype = coltype);  
+      }
 
+      /*
+      `__removeColumns` is a helper method that clears column infomation list.
+      */
+      proc __removeColumns() {
 
-        */
-        proc __addColumn(colnum:int(32),colname:string,coltype:string=""){
-            this.columns[colnum] = new ColumnInfo(name=colname,colnum=colnum,coltype=coltype);  
+        // if(this.columns[colnum] != nil) {
+          for colnum in this.columns {
+            this.columns.remove(colnum);
+          }    
+        // }
+      }
+    
+      pragma "no doc"
+      proc getColumnInfo(colnum: int(32)): ColumnInfo {
+        return this.columns[colnum];
+      }
+
+      proc hasColumn(name: string): bool {
+        for col in this.columns {
+          if(name == columns[col].name) {
+            return true;
+          }
         }
-        /*
-        `__removeColumns` is a helper method that clears column infomation list.
-        */
-        proc __removeColumns(){
+        return false;
+      }
 
-            //if(this.columns[colnum]!=nil){
-                for colnum in this.columns{
-                    this.columns.remove(colnum);
-                }
-                
-            //}
+      pragma "no doc"
+      proc printColumns() {
+        for col in this.columns {
+            writeln(col,"\t");
+        }
+        writeln("\n++++++++++++++++++++++++++++++++++++++++++++");
+      }
+    
+      /*
+        `rowcount` gets the number of rows in result set.
+        :return: Number of rows in the result set.
+        :rtype: `int(32)`
+      */
+      proc rowcount(): int(32) {
+        return 0;
+      }
+    
+      /*
+      */
+      pragma "no doc"
+      proc callproc() {
 
-        }
-        pragma "no doc"
-        proc getColumnInfo(colnum:int(32)):ColumnInfo{
-            return this.columns[colnum];
-        }
+      }
+    
+      /*
+        `close` frees the result result set resources.
+        :return: Number of rows in the result set.
+        :rtype: `int(32)`
+      */   
+      proc close() {
 
-        proc hasColumn(name:string):bool{
-            for col in this.columns{
-                if(name == columns[col].name){
-                    return true;
-                }
-            }
-            return false;
-        }
+      }
+    
+      /*
+      `execute` executes SQL commands.
 
-        pragma "no doc"
-        proc printColumns(){
-            for col in this.columns{
-                writeln(col,"\t");
-            }
-            writeln("\n++++++++++++++++++++++++++++++++++++++++++++");
-        }
-        /*
-            `rowcount` gets the number of rows in result set.
-            :return: Number of rows in the result set.
-            :rtype: `int(32)`
-        */
-        proc rowcount():int(32){
-            return 0;
-        }
-        /*
-        */
-        pragma "no doc"
-        proc callproc(){
+      :arg query: `string` SQL command.
+      :type query: `string`
 
-        }
-        /*
-            `close` frees the result result set resources.
-            :return: Number of rows in the result set.
-            :rtype: `int(32)`
-        */   
-        proc close(){
+      :arg params: `tuple` tuple of parameters.
+      :type params: `tuple`
 
-        }
-        /*
+      */  
+      proc execute(query: string, params) {
+
+      }
+    
+      /*
         `execute` executes SQL commands.
 
         :arg query: `string` SQL command.
         :type query: `string`
+      */
+      proc execute(query: string) {
+        
+      }
 
-        :arg params: `tuple` tuple of parameters.
-        :type params: `tuple`
-
-        */  
-        proc execute(query:string, params){
-
-        }
-        /*
-            `execute` executes SQL commands.
-
-            :arg query: `string` SQL command.
-            :type query: `string`
-        */
-        proc execute(query:string){
-            
-        }
-
-        /*
-            `query` sends SQL queries.
-
-            :arg query: `string` SQL command.
-            :type query: `string`
-
-        */ 
-        proc query(query:string){
-            
-        }
-
-        /*
+      /*
         `query` sends SQL queries.
 
         :arg query: `string` SQL command.
         :type query: `string`
-        :arg params: `tuple` tuple of parameters.
-        :type params: `tuple`
 
-        */ 
-
-        proc query(query:string,params){
-
-            
-        }
-
-        pragma "no doc"
-        proc dump(){
-
-        }
-    
-
-        pragma "no doc"
-        proc executemany(str:string, pr){
-        //writeln(pr[1][1]);
-        }
-
-        /*
-        `fetchone` gets one row from result set.
-
+      */ 
+      proc query(query: string) {
         
-        :return: Row data.
-        :rtype: `Row`
-        */ 
+      }
 
-        proc fetchone(): owned Row {
-            return new Row(valid = false);
+      /*
+      `query` sends SQL queries.
+
+      :arg query: `string` SQL command.
+      :type query: `string`
+      :arg params: `tuple` tuple of parameters.
+      :type params: `tuple`
+
+      */ 
+      proc query(query: string, params) {
+      }
+
+      pragma "no doc"
+      proc dump() {
+      }
+
+      pragma "no doc"
+      proc executemany(str: string, pr) {
+        // writeln(pr[1][1]);
+      }
+
+      /*
+      `fetchone` gets one row from result set.
+         :return: Row data.
+         :rtype: `Row`
+      */ 
+
+      proc fetchone(): shared Row {
+        return new shared Row(valid = false);
+      }
+
+      proc fetchAsRecord(ref el: ?eltType): eltType {
+        //var el2: eltType = new eltType;
+        var row: Row? = this.fetchone();
+        if(row == nil) {
+          return nil;
         }
-
-        proc fetchAsRecord(ref el:?eltType): eltType{
-            //var el2: eltType = new eltType;
-            var row: Row = this.fetchone();
-
-            if(!row.isValid()){
-                return nil;
-            }
-            for param i in 1..numFields(eltType) {
-                var fname = getFieldName(eltType,i);
-                if(hasColumn(fname)){
-                //if(getFieldRef(el, i).type == string){
-                    type ftype = getFieldRef(el, i).type;
-                    var s=row[fname];
-                    if(isNumericType(ftype)&&(s=="")){
-                        getFieldRef(el, i)= 0:ftype;
-                    }else{
-                        getFieldRef(el, i)=s:ftype;
-                    }
-                    
-                //}
-                // =  row[fname];
-                }
-            }
-
-            return el;
-        }
-
-        proc fetchAsObj(ref el:?eltType):eltType{
-            //var el2: eltType = new eltType;
-            var row:Row = this.fetchone();
-            if(row==nil){
-                return nil;
-            }
-            for param i in 1..numFields(eltType) {
-                var fname = getFieldName(eltType,i);
-                if(hasColumn(fname)){
-                if(getFieldRef(el, i).type == string){
-                    
-                    type ftype = getFieldRef(el, i).type;
-                    var s=row[fname];
-                    getFieldRef(el, i)=s:ftype;
+        for param i in 1..numFields(eltType) {
+          var fname = getFieldName(eltType,i);
+          if(hasColumn(fname)){
+            // if(getFieldRef(el, i).type == string){
+              type ftype = getFieldRef(el, i).type;
+              var s=row[fname];
+              if(isNumericType(ftype)&&(s=="")){
+                getFieldRef(el, i)= 0:ftype;
+              } 
+              else {
+                getFieldRef(el, i)=s:ftype;
+              }
                 
-                }else if(isClass(getFieldRef(el, i))){
-                    //type ftype = getFieldRef(el, i).type;
-                }
-                }
+            //}
+            // =  row[fname];
+          }
+        }
+        return el;
+      }
+
+      proc fetchAsObj(ref el: ?eltType): eltType {
+        //var el2: eltType = new eltType;
+        var row: Row? = this.fetchone();
+        if(row == nil) {
+          return nil;
+        }
+        for param i in 1..numFields(eltType) {
+          var fname = getFieldName(eltType,i);
+          if(hasColumn(fname)) {
+            if(getFieldRef(el, i).type == string) {
+              type ftype = getFieldRef(el, i).type;
+              var s=row[fname];
+              getFieldRef(el, i)=s:ftype;
             }
-
-            return el;
-        }
-
-
-
-
-
-
-        pragma "no doc"
-        
-        proc __objToArray(ref el:?eltType){
-
-            var cols: map(string,string, parSafe=true);
-
-            for param i in 1..numFields(eltType) {
-                var fname = getFieldName(eltType,i);
-                var value = getFieldRef(el, i);// =  row[fname];
-                cols[fname:string] = value:string;
+            else if(isClass(getFieldRef(el, i))) {
+            //type ftype = getFieldRef(el, i).type;
             }
-
-            return cols;
+          }
         }
-        /*
-        `insertRecord` inserts data from (object) record/class  fields into database  table.
-            :arg table: `string` name of the datbase table.
-            :type el: `?eltType` Object containing the data in class/record fields. 
-            :return: Insert sql generted to do the insert operation.
-            :rtype: `string`
-        */
-        proc insertRecord(table:string, ref el:?eltType):string{
-            
-            return "";
-        }
-
-
-        /*
-        `insert` inserts associative array into database  table.
-            :arg table: `string` name of the database table.
-            :type data: `[?D]string` Associative array with columns name as index. 
-            :return: Insert sql generted to do the insert operation.
-            :rtype: `string`
-        */
-        proc insert(table:string, data:map(string, string, parSafe=true)):string{
-            return "";
-        }
-
-        proc update(table:string, whereCond:string, data:map(string, string, parSafe=true)):string{
-            return "";
-        }
-
-        proc updateRecord(table:string, whereCond:string,  ref el: ?eltType):string{
-            return "";
-        }
-
-
-        proc Delete(table:string, whereCond:string):string{
-            return "";
-        }
-
+        return el;
+      }
     
+      pragma "no doc"
+      proc __objToArray(ref el: ?eltType) {
+        var cols: map(string, string, parSafe = true);
+        for param i in 1..numFields(eltType) {
+          var fname = getFieldName(eltType,i);
+          var value = getFieldRef(el, i);// =  row[fname];
+          cols[fname:string] = value:string;
+        }
+        return cols;
+      }
+    
+      /*
+      `insertRecord` inserts data from (object) record/class  fields into database  table.
+        :arg table: `string` name of the datbase table.
+        :type el: `?eltType` Object containing the data in class/record fields. 
+        :return: Insert sql generted to do the insert operation.
+        :rtype: `string`
+      */
+      proc insertRecord(table: string, ref el: ?eltType): string {  
+        return "";
+      }
 
-        /*
-        `fetchmany` iterates on `count` rows.
+      /*
+      `insert` inserts associative array into database  table.
+        :arg table: `string` name of the database table.
+        :type data: `[?D]string` Associative array with columns name as index. 
+        :return: Insert sql generted to do the insert operation.
+        :rtype: `string`
+      */
+      proc insert(table: string, data: map(string, string, parSafe=true)): string {
+        return "";
+      }
 
-        :arg count: `int` Number of rows that wants to interate on.
-        :type count: `int`
+      proc update(table: string, whereCond: string, data: map(string, string, parSafe=true)): string {
+        return "";
+      }
+
+      proc updateRecord(table: string, whereCond: string,  ref el: ?eltType): string {
+        return "";
+      }
+
+      proc Delete(table: string, whereCond: string): string {
+        return "";
+      }
+
+      /*
+      `fetchmany` iterates on `count` rows.
+
+      :arg count: `int` Number of rows that wants to interate on.
+      :type count: `int`
+    
+      :return: Row data.
+      :rtype: `Row`
+      */ 
+      iter fetchmany(count:  int = 0): shared Row {
         
-        :return: Row data.
-        :rtype: `Row`
-        */ 
+      }
+    
+      /*
+      `fetchall` iterates on all rows.
+    
+      :return: Row data.
+      :rtype: `Row`
+      */ 
+      iter fetchall():shared Row {
+      }
+    
+      /*
+      `this[idx]` accesses the idx-th row.
+      :return: Row data.
+      :rtype: `Row`
+      */
+      proc this(idx:int):shared Row? {
+        return nil;
+      }
 
-        iter fetchmany(count:int=0):owned Row{
-            
-        }
-        /*
-        `fetchall` iterates on all rows.
+      /*
+      `
+      ` iterates on all rows.
+    
+      :return: Row data.
+      :rtype: `Row`
+      */ 
+      iter these() ref {
+
+      } 
+
+      /*
+      `next` increses the cursor position.
+    
+      :return: Row data.
+      :rtype: `Row`
+      */
+      proc next() {
         
-        :return: Row data.
-        :rtype: `Row`
-        */ 
+      }
 
-        iter fetchall():owned Row{
-        
-        }
-        /*
-        `this[idx]` accesses the idx-th row.
-        :return: Row data.
-        :rtype: `Row`
-        */
-        proc this(idx:int):owned Row{
-            
-        }
+      pragma "no doc"
+      proc messages() {
 
-        /*
-        `
-        ` iterates on all rows.
-        
-        :return: Row data.
-        :rtype: `Row`
-        */ 
-        iter these()ref{
-
-        }
-
-        /*
-        `next` increses the cursor position.
-        
-        :return: Row data.
-        :rtype: `Row`
-        */
-        proc next(){
-            
-        }
-        pragma "no doc"
-        proc messages(){
-
-        }
+      }
 
     }
 
     type whereType = 6*string;
 
-    class StatementData{
-        var data: list(string);
+    class StatementData {
+      var data: list(string);
+      var where_data:list(string);
 
-        var where_data:list(string);
+      proc init(op: string, data) {
+        this.op = op;
+        this.complete();
+        this.data.append(data);
+      }
 
-        proc init(op, data){
-            this.op = op;
-            this.complete();
-            this.data.append(data);
+      proc init(op: string, data: whereType){
+        this.op = op;
+        this.complete();
+        this.where_data.append(data);
+      }
+    
+      proc this(i: int): string {
+        try {
+          if(this.op=="where") {
+            return this.where_data[i];
+          } 
+          else {
+            return this.data[i];
+          }
         }
-
-        proc init(op:string, data:whereType){
-            this.op=op;
-            this.complete();
-            this.where_data.append(data);
+        catch {
+          writeln("Error Statement Data");
         }
-        
-        proc this(i:int):string{
-            try{
-                if(this.op=="where"){
-                    return this.where_data[i];
-                }else{
-                    return this.data[i];
-                }
-            }catch{
-                writeln("Error Statement Data");
+      }
+
+      iter these()ref: string {
+        try {
+          if(this.op == "where") {
+            for obj in this.where_data {
+              yield obj;
             }
-        }
-
-        iter these()ref:string{
-            try{
-                if(this.op=="where"){
-                    for obj in this.where_data{
-                        yield obj;
-                    }
-                }else{
-                    for obj in this.data{
-                        yield obj;
-                    }
-                }
-            }catch{
-                writeln("Error Statement Data");
+          }
+          else {
+            for obj in this.data {
+              yield obj;
             }
+          }
         }
+        catch {
+          writeln("Error Statement Data");
+        }
+      }
 
-        proc setData(data){
-            this.data=data;
-        }
-        proc getData(){
-            return this.data;
-        }
-        proc getWhereData(){
-            return this.where_data;
-        }
-        
-        proc writeThis(f){
-            try{
-                if(this.op=="where"){
-                    for c in this.where_data{
-                        f.writeln("Op:",this.op," *data=",c);
-                    }
-                }else{
-                    for c in this.data{
-                        f.writeln("Op:",this.op," data=",c);
-                    }
-                }
-            }catch{
-                writeln("Error on write");
+      proc setData(data) {
+        this.data = data;
+      }
+
+      proc getData() {
+        return this.data;
+      }
+
+      proc getWhereData() {
+        return this.where_data;
+      }
+    
+      proc writeThis(f) {
+        try{
+          if(this.op == "where") {
+            for c in this.where_data {
+              f.writeln("Op:", this.op, " *data=", c);
             }
+          }
+          else {
+            for c in this.data {
+              f.writeln("Op:", this.op, " data=", c);
+            }
+          }
         }
+        catch{
+          writeln("Error on write");
+        }
+      }
     }
 
 
@@ -1522,18 +1483,19 @@ module Cdo{
     `Connection` forwarding contract interface-like class.
 
     */
-    class Connection{
-        forwarding var driver: ConnectionBase;
+    class Connection {
+      forwarding var driver: ConnectionBase;
     }
+
     /*
     `Connection` forwarding contract interface-like class.
     */
-    class Cursor{
-        forwarding var cursor_drv: CursorBase;
+    class Cursor {
+      forwarding var cursor_drv: CursorBase;
     }
 
-    class QueryBuilder{
-        forwarding var query_driver: QueryBuilderBase;
+    class QueryBuilder {
+      forwarding var query_driver: QueryBuilderBase;
 
         /*proc writeThis(f){
             this.query_driver.writeThis(f);
@@ -1551,18 +1513,18 @@ module Cdo{
                 var i:int=0;
                 var prfx:string="";
                 for s in str.split(myRegexp){
-                    if((s.length!=0)&&(s.isUpper())){
+                    if((s.size!=0)&&(s.isUpper())){
                 // var ss:string;
                         if(i>0){
                             prfx="_";
                         }
                         tb += (prfx+s.toLower());
                         i+=1;
-                    }else if(s.length!=0){
+                    }else if(s.size!=0){
                         tb += s.toLower();
                         i+=1;
                 }
-                //writeln("* ",s, " id upper ", s.isUpper():string, "len = ", s.length);
+                //writeln("* ",s, " id upper ", s.isUpper():string, "len = ", s.size);
             }
             
             return tb;

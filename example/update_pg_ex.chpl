@@ -1,6 +1,7 @@
 module Main{
 use Cdo;
 use Postgres;
+use Map;
 
 proc main(){
     //Open connection with Postgres database. Parametrs are host,username, database, password
