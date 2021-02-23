@@ -102,51 +102,32 @@ make mysqlex
 
 ### Code example
 ```chapel
-module Main{
-use Cdo;
-use Mysql;
+module Main {
+    use DatabaseCommunicator;
+    use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder; // for Statement class
+    use MySQL;
 
-proc main(){
-//Open connection to Mysql database. Parametrs are host,username, database, password
+    proc main() throws {
+        var conHandler = new ConnectionHandler(MySQLConnection, "localhost;testdb;username;password");
+        var cursor = conHandler.cursor();
 
-var con = MysqlConnectionFactory("localhost", "username", "database", "password");
+        var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
+        cursor.execute(new Statement(createStmt));
+        cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
 
-
-//Open a cursor
-var cursor = con.cursor();
-//Queries from database
-cursor.query("SELECT * FROM contacts");
-//Get one row.
-var res:Row = cursor.fetchone();
-while(res.isValid()){
-//print the results.
-writeln(res);
-//get the next row one.
-res = cursor.fetchone();
-}
-
-// Queries passing tuple to formated query string.
-cursor.query("SELECT %s, %s FROM contacts",("email","name"));
+        var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
+        stmt.setValue(1, "B");
         
-// iterate over all rows
-for row in cursor{
-//get row data by column name and print it.
-writeln("name = ", row["name"]," email = ", row["email"] );
-}
+        cursor.execute(stmt);
 
-cursor.query("SELECT * FROM contacts");
+        for row in cursor.fetchall() {
+            writeln(row![0], "\t", row![1]);
+        }
 
-// iterate over all rows
-for row in cursor{
-//get row data by column number and print it.
-writeln("name = ", row[1] );
-}
-
-
-cursor.close();
-con.close();
-writeln("end");
-}
+        cursor.close();
+        conHandler.commit();
+        conHandler.close();
+    }
 }
 ```
 
