@@ -89,16 +89,19 @@ On Ubuntu do:
 ```bash
 sudo apt-get install libmysqlclient-dev
 ```
-3. Go to example/expq.chpl and inform database host, user, password. 
+3. Go to example/mysql_ex1.chpl and set database host, user, password. 
 4. Verify the mysql library path with ```bash mysql_config --cflags --libs ``` and edit Makefile.
 5. Go to repository folder and compile:
 ```bash
-make mysqlex
+make mysql_ex1
 ```
 6. Run the example:
 ```bash
-./mysqlex
+cd bin
+./mysql_ex1
 ```
+
+Do similar steps to compile mysql_ex2.
 
 ### Code example
 ```chapel

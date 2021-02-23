@@ -1,21 +1,18 @@
 module Main {
     use DatabaseCommunicator;
-    use DatabaseCommunicationObjects;
+    use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder; // for Statement class
     use MySQL;
 
     proc main() throws {
-        var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "../example/dbinfo.toml");
+        var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbinfo.toml");
         var cursor = conHandler.cursor();
 
-        //var createStmt = "CREATE TABLE BLEH (id INT PRIMARY KEY, name VARCHAR(10));";
-        //cursor.execute(new Statement(createStmt));
-        //cursor.execute(new Statement("INSERT INTO CONTACT VALUES (6, 'B');"));
-        
-        //var insertStmts = [new Statement("INSERT INTO CONTACTS VALUES (1, 'A');"), new Statement("INSERT INTO CONTACTS VALUES (2, 'B');")];
-        //cursor.executeBatch(insertStmts);
+        var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
+        cursor.execute(new Statement(createStmt));
+        cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
 
-        var stmt: Statement = new Statement("SHOW VARIABLES LIKE '%autocommit%'", true);
-        //stmt.setValue(1, "B");
+        var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
+        stmt.setValue(1, "B");
         
         cursor.execute(stmt);
 
@@ -23,9 +20,6 @@ module Main {
             writeln(row![0], "\t", row![1]);
         }
 
-        writeln(cursor.getLastError());
-
-        // add other methods
         cursor.close();
         conHandler.commit();
         conHandler.close();
