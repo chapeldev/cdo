@@ -1,0 +1,6 @@
+[dbconf]
+host = "localhost"
+dbname = "testdb"
+username = "root"
+password = "password"
+autocommit = true

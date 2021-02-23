@@ -1,0 +1,5 @@
+[dbconfig]
+host = "localhost"
+dbname = "testdb"
+username = "root"
+password = "password"
