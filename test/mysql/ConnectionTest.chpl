@@ -4,82 +4,35 @@ use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder;
 use UnitTest;
 use MySQL;
 
-proc simpleConnectionTest(test: borrowed Test) throws {
-    var conHandler = new ConnectionHandler(MySQLConnection, "localhost;testdb;root;password");
+proc configConnectionTestNormal(test: borrowed Test) throws {
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     conHandler.close();
-
-    // Invalid connection string, should throw exception:
-    conHandler = new ConnectionHandler(MySQLConnection, "localhost;");
 }
 
-proc configConnectionTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
-    conHandler.close();
-
+proc configConnectionTestDifferentRootElem(test: borrowed Test) throws {
     // different root element name in TOML file
-    conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig2.toml", "dbconf");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig2.toml", "dbconf");
     conHandler.close();
+}
 
+// TODO: Figure out a way to run all the follwing tests in one go
+// Currently, the TOML library halts on an error so all of these can't run unless each
+// function is isolated in a different file.
+
+proc configConnectionTestWrongRootElem(test: borrowed Test) throws {
     // wrong root element in TOML file, should throw exception:
-    conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml", "root");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml", "root");
     conHandler.close();
+}
 
+proc configConnectionTestInvalidFile(test: borrowed Test) throws {
     // Invalid file, should throw exception saying file not found
-    conHandler = ConnectionHandlerWithConfig(MySQLConnection, "nofile");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "nofile");
+}
 
+proc configConnectionTestTomlParseError(test: borrowed Test) throws {
     // Invalid file (not TOML), should throw TOML parsing error
-    conHandler = ConnectionHandlerWithConfig(MySQLConnection, "TransactionTest.chpl");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "TransactionTest.chpl");
 }
-
-proc testAutocommit(test: borrowed Test) throws {
-    // Tests Part A: Connection init using autcommit specified/not specified
-    // in config files
-
-    // the config file in this does not specify autocommit
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig_noautoc.toml");
-    test.assertTrue(conHandler.isAutocommit());
-    conHandler.setAutocommit(false);
-    test.assertFalse(conHandler.isAutocommit());
-    conHandler.setAutocommit(true);
-    test.assertTrue(conHandler.isAutocommit());
-    conHandler.close();
-
-    // the config file in this specifies autocommit as true
-    conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig_autoc_true.toml");
-    test.assertTrue(conHandler.isAutocommit());
-    // the following line is intentional
-    conHandler.setAutocommit(true);
-    test.assertTrue(conHandler.isAutocommit());
-    conHandler.setAutocommit(false);
-    test.assertFalse(conHandler.isAutocommit());
-    conHandler.close();
-
-    // config file in this specifies autocommit as false
-    conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig_autoc_false.toml");
-    test.assertFalse(conHandler.isAutocommit());
-    conHandler.setAutocommit(true);
-    test.assertTrue(conHandler.isAutocommit());
-    conHandler.close();
-
-    // Tests Part B: Connection init using ConnectionHandler constructor
-    
-    conHandler = new ConnectionHandler(MySQLConnection, "localhost;testdb;root;password");
-    test.assertTrue(conHandler.isAutocommit());
-    // the following line is intentional
-    conHandler.setAutocommit(true);
-    test.assertTrue(conHandler.isAutocommit());
-    conHandler.setAutocommit(false);
-    test.assertFalse(conHandler.isAutocommit());
-    conHandler.close();
-
-    conHandler = new ConnectionHandler(MySQLConnection, "localhost;testdb;root;password", false);
-    test.assertFalse(conHandler.isAutocommit());
-    conHandler.setAutocommit(true);
-    test.assertTrue(conHandler.isAutocommit());
-    conHandler.close();
-}
-
-// Tests for other methods are located appropriately
-// TODO: replace "appropriately" in above line with proper locations
 
 UnitTest.main();

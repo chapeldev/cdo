@@ -4,11 +4,12 @@ module Main {
     use MySQL;
 
     proc main() throws {
-        var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "../example/dbinfo.toml");
+        var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "../example/dbinfo.toml");
         var cursor = conHandler.cursor();
 
         cursor.execute(new Statement("CREATE TABLE IF NOT EXISTS sample (Field1 int primary key, Field2 varchar(30), Field3 boolean);"));
 
+        cursor.execute(new Statement("TRUNCATE TABLE sample;"));
         cursor.execute(new Statement("SELECT count(*) FROM sample WHERE Field1 = 1;"));
         var res = cursor.fetchone();
 

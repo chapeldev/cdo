@@ -3,11 +3,24 @@
 # ensure that $CHPL_HOME is set for this user for
 # successful execution of this script
 
-cd ../..
+if [ $(pwd) == *"test/mysql" ]
+then
+    cd ../..
+fi
 
-echo "[Info] Making tests..."
-make tests
-cp -f ./test/mysql/configs/*.toml ./bin
+compiletests=1
+
+if [ $# -ge 1 ] && [ $1 == "--no-compile" ]
+then
+    compiletests=0
+fi
+
+if [ $compiletests -eq 1 ]
+then
+    echo "[Info] Making tests..."
+    make tests
+    cp -f ./test/mysql/configs/*.toml ./bin
+fi
 cd ./bin
 
 # start mysql server if not yet started
@@ -19,11 +32,14 @@ echo "[Info] STARTING TESTS"
 echo "[Info] Running tests for Statement class"
 ./statements_test
 
-echo "[Info] Initializing db"
+echo "[Info] Populating test DB table"
 ./test_db_init
 
 echo "[Info] Running ConnectionTest"
 ./mysql_connection_test
+
+echo "[Info] Running ConnectionTestAutocommit"
+./mysql_connection_test_autoc
 
 echo "[Info] Running CursorTest"
 ./mysql_cursor_test

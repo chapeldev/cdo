@@ -1,11 +1,11 @@
 module Implementables {
-    use super.QueryBuilder;
+    use DatabaseCommunicator.QueryBuilder;
     /*
     The `IConnection` class provides an interface that needs to be
     implemented by all database connector classes.
     */
     class IConnection {
-        proc connect(connectionString: string, autocommit: bool = true) throws {}
+        proc _connect(connectionString: string, autocommit: bool = true) throws {}
         proc type getRequiredConnectionParameters(): string {return nil;}
         proc cursor(): ICursor {return nil;}
         proc close() {}

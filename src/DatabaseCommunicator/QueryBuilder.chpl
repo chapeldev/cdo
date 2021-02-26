@@ -1,5 +1,5 @@
 module QueryBuilder {
-    use super.ErrorTypes;
+    use DatabaseCommunicator.DatabaseCommunicationObjects.ErrorTypes;
 
     /*** Query Building ***/
 
@@ -72,11 +72,11 @@ module QueryBuilder {
             :rtype: bool
         */
 
-        proc isPlaceholderRemaining(): bool {
+        proc _isPlaceholderRemaining(): bool {
             // TODO: There's a way to further optimize this placeholder checking
             // by counting the number of placeholders in init and decrementing
             // the count everytime a value is substituted.
-            // This will allow isPlaceholderRemaining() to execute in O(1)
+            // This will allow _isPlaceholderRemaining() to execute in O(1)
             // instead of O(n) each time this function is called.
 
             // Skip the check if we've previously checked that there's none left
@@ -116,7 +116,7 @@ module QueryBuilder {
                 return this._finalStatement;
             }
 
-            if (this.isPlaceholderRemaining()) {
+            if (this._isPlaceholderRemaining()) {
                 throw new IncompleteStatementError();
             }
             return this._finalStatement;

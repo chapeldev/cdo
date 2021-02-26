@@ -5,9 +5,9 @@ module MySQL {
     use CPtr;
     use SysCTypes;
     use MySQLNative;
-    require "mysql.h";
-    require "stdio.h";
-    require "helpers/mysql_helper.h", "helpers/mysql_helper.c";
+    //require "mysql.h";
+    //require "stdio.h";
+    //require "helpers/mysql_helper.h", "helpers/mysql_helper.c";
 
     /*
     Enum that describes the data type held by a field in MySQL.
@@ -78,7 +78,7 @@ module MySQL {
             :arg autocommit: whether to turn on autocommit
             :type autocommit: bool
         */
-        override proc connect(connectionString: string, autocommit: bool = true) throws {
+        override proc _connect(connectionString: string, autocommit: bool = true) throws {
             // TODO: check the connection string properly
 
             var host: string;
@@ -125,59 +125,6 @@ module MySQL {
         } 
 
         /*
-        Constructor for the class that initializes default values.
-        Note that this constructor does NOT connect to any database.
-        */
-        proc init() {
-            this._cptr_mysqlconn = nil;
-            this._autocommit = true;
-            this._prev_autocommit_state = true;
-            this._connected = false;
-        }
-
-        /*
-        Initialize a MySQL database connection.
-            :arg host: Host name/address
-            :type host: string
-
-            :arg username: username
-            :type username: string
-
-            :arg database: database name
-            :type database: string
-
-            :arg password: password
-            :type password: string
-
-            :arg autocommit: whether to enable autocommit (optional, true by default)
-            :type autocommit: bool
-        */
-        proc init(host: string, username: string, database: string, password: string, autocommit: bool = true) {
-            this._cptr_mysqlconn = nil;
-            this._autocommit = autocommit;
-            this._prev_autocommit_state = autocommit;
-
-            this._cptr_mysqlconn = mysql_init(this._cptr_mysqlconn);
-
-            var conn_res: c_ptr(MYSQL) = mysql_real_connect(this._cptr_mysqlconn, 
-                                                            host.localize().c_str(), 
-                                                            username.localize().c_str(), 
-                                                            password.localize().c_str(), 
-                                                            database.localize().c_str(), 0, 
-                                                            c_nil: c_string, 0);
-
-            if (conn_res == c_nil) {
-                writeln("[Error] Unable to connect to database!");
-                mysql_close(this._cptr_mysqlconn);
-                // throw new DBConnectionFailedError();
-            }
-
-            this._connected = true;
-            this.complete();
-            this.setAutocommit(true);
-        }
-
-        /*
         Returns true if connected to a database.
         */
         proc isConnected(): bool {
@@ -186,7 +133,7 @@ module MySQL {
 
         pragma "no doc"
         // TODO: Use this function at the beginning of each appropriate function
-        proc checkConnected() {
+        proc _checkConnected() {
             if (!this._connected) {
                 throw new NotConnectedError();
             }
@@ -341,25 +288,11 @@ module MySQL {
         var _cptr_row: MYSQL_ROW;
         var _cptr_fields: c_ptr(MYSQL_FIELD);
         var _fieldTypes: string;
-        var valid: bool;
 
         pragma "no doc"
-        proc init(valid: bool) {
-            this._cptr_fields = nil;
-            this.valid = false;
-        }
-
-        pragma "no doc"
-        proc init(mysqlrow: MYSQL_ROW, cfields: c_ptr(MYSQL_FIELD), valid: bool = true) {
+        proc init(mysqlrow: MYSQL_ROW, cfields: c_ptr(MYSQL_FIELD)) {
             this._cptr_row = mysqlrow;
             this._cptr_fields = cfields;
-
-            this.valid = valid;
-            // TODO: init _fieldTypes here
-        }
-
-        proc isValid() {
-            return this.valid;
         }
 
         /*
@@ -376,9 +309,6 @@ module MySQL {
             :rtype: t
         */
         override proc getValAsType(fieldNumber: int(32), type t) {
-            if (!this.isValid()) {
-                throw new InvalidRowError();
-            }
             var fieldVal: string = createStringWithNewBuffer(__get_mysql_field_val_by_number(this._cptr_row, fieldNumber));
             return fieldVal: t;
         }
@@ -397,9 +327,6 @@ module MySQL {
             :rtype: t
         */
         override proc getValAsType(fieldName: string, type t) {
-            if (!this.isValid()) {
-                throw new InvalidRowError();
-            }
             var fieldVal: string = createStringWithNewBuffer(__get_mysql_field_val_by_name(this._cptr_row, 
                                                                                            this._cptr_fields, 
                                                                                            fieldName.localize().c_str()));
@@ -413,9 +340,6 @@ module MySQL {
             :type fieldNumber: int(32)
         */
         override proc getVal(fieldNumber: int(32)): string throws {
-            if (!this.isValid()) {
-                throw new InvalidRowError();
-            }
             return createStringWithNewBuffer(__get_mysql_field_val_by_number(this._cptr_row, fieldNumber));
         }
 
@@ -426,25 +350,16 @@ module MySQL {
             :type fieldName: string
         */
         override proc getVal(fieldName: string): string {
-            if (!this.isValid()) {
-                throw new InvalidRowError();
-            }
             return createStringWithNewBuffer(__get_mysql_field_val_by_name(this._cptr_row, 
                                                                            this._cptr_fields, 
                                                                            fieldName.localize().c_str()));
         }
 
         proc this(fieldNumber: int(32)): string throws {
-            if (!this.isValid()) {
-                throw new InvalidRowError();
-            }
             return this.getVal(fieldNumber);
         }
 
         proc this(fieldName: string): string throws {
-            if (!this.isValid()) {
-                throw new InvalidRowError();
-            }
             return this.getVal(fieldName);
         }
     }
@@ -594,7 +509,7 @@ module MySQL {
             this._curRow += 1;
 
             // init the row:
-            var _row = new MySQLRow(nextRow, this._cptr_fields, true);
+            var _row = new MySQLRow(nextRow, this._cptr_fields);
             
             return _row;
         }
@@ -603,6 +518,8 @@ module MySQL {
         Fetches the next given number of rows in the result one by one,
         returning an iterator.
         Throws Error if howManyRows is negative.
+        In case howManyRows > actual number of rows in the retrieved set, 
+        all the rows are returned.
 
             :args howManyRows: how many rows to return
             :type howManyRows: int(32)
@@ -611,6 +528,10 @@ module MySQL {
             if (howManyRows < 0) {
                 writeln("[Error] MySQLCursor.fetchsome(howManyRows) called with howManyRows < 0");
                 throw new Error();
+            }
+
+            if (howManyRows > this._nRows) {
+                writeln("[Warning] MySQLCursor.fetchsome(howManyRows) called with howManyRows > _nRows; whole result set will be returned.");
             }
 
             else {

@@ -4,7 +4,7 @@ use UnitTest;
 use MySQL;
 
 proc cursorOpenExecuteTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     cursor.execute(new Statement("SELECT * FROM sample"));
@@ -14,7 +14,7 @@ proc cursorOpenExecuteTest(test: borrowed Test) throws {
 }
 
 proc cursorQueryTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     cursor.query(new Statement("SELECT * FROM sample"));
@@ -24,7 +24,7 @@ proc cursorQueryTest(test: borrowed Test) throws {
 }
 
 proc fetchoneTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     cursor.execute(new Statement("SELECT * FROM sample"));
@@ -39,7 +39,7 @@ proc fetchoneTest(test: borrowed Test) throws {
 }
 
 proc fetchallTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     cursor.execute(new Statement("SELECT * FROM sample"));
@@ -56,7 +56,7 @@ proc fetchallTest(test: borrowed Test) throws {
 }
 
 proc executeBatchTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     var insertStatements = [new Statement("INSERT INTO sample VALUES (31, 'Person1', true)"),
@@ -91,7 +91,7 @@ proc executeBatchTest(test: borrowed Test) throws {
 }
 
 proc getFieldsInfoTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     cursor.execute(new Statement("SELECT * FROM sample"));

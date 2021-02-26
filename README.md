@@ -111,7 +111,7 @@ module Main {
     use MySQL;
 
     proc main() throws {
-        var conHandler = new ConnectionHandler(MySQLConnection, "localhost;testdb;username;password");
+        var conHandler = ConnectionHandler.ConnectionHandlerWithString(MySQLConnection, "localhost;testdb;username;password");
         var cursor = conHandler.cursor();
 
         var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
@@ -143,7 +143,7 @@ module Main {
     use MySQL;
 
     proc main() throws {
-        var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbinfo.toml");
+        var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbinfo.toml");
         var cursor = conHandler.cursor();
 
         var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";

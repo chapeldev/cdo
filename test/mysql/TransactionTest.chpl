@@ -4,7 +4,7 @@ use UnitTest;
 use MySQL;
 
 proc simpleTransactionTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     test.assertTrue(conHandler.isAutocommit());
@@ -23,7 +23,7 @@ proc simpleTransactionTest(test: borrowed Test) throws {
 }
 
 proc transactionRollbackTest(test: borrowed Test) throws {
-    var conHandler = ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
     var cursor = conHandler.cursor();
 
     test.assertTrue(conHandler.isAutocommit());

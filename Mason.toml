@@ -2,10 +2,10 @@
 [brick]
 name = "DatabaseCommunicator"
 version = "0.1.0"
-authors = ["Marcos Cleison Silva Santana <marcoscleison@gmail.com>"]
 chplVersion = "1.23.0"
 license = "Apache License 2.0"
 tests = ["mysql/ConnectionTest.chpl",
+         "mysql/ConnectionTestAutocommit.chpl",
          "mysql/CursorTest.chpl",
          "mysql/FieldTest.chpl",
          "mysql/RowTest.chpl",
