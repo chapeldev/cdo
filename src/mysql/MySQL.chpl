@@ -42,6 +42,10 @@ module MySQL {
     /*
     Class for a MySQL server connection. 
     Used to keep track of a MySQL server connection.
+    Connection string format:
+    <host>;<database name>;<username>;<password>
+    Note that the port number can be specified in the host part itself, for example:
+    localhost:5223;testdb;testuser;pwd
     */
     class MySQLConnection : IConnection {
         
@@ -65,6 +69,7 @@ module MySQL {
             return "host;dbname;username;password";
         }
 
+        pragma "no doc"
         /*
         Explicitly connects to a database.
         Connection string format:

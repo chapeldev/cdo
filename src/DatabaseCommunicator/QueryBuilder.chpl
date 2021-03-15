@@ -66,6 +66,7 @@ module QueryBuilder {
             // TODO: add escapes for symbols
         }
 
+        pragma "no doc"
         /*
         Checks if any placeholder remains to be substituted in the SQL statement.
             :return: if any placeholders are yet to be substituted
