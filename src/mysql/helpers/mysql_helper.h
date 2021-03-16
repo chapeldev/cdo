@@ -1,7 +1,7 @@
 #ifndef __MYSQL_HELPER_H
     #define __MYSQL_HELPER_H
 //    #include <my_global.h> (can't find this file anywhere)
-    #include "/usr/include/mysql/mysql.h"
+    #include <mysql.h>
     #include <stdio.h>
     #include <string.h>
 

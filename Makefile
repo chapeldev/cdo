@@ -58,23 +58,23 @@ statements_test:
 	chpl -o ./bin/statements_test ./test/StatementsTest.chpl -M ./src
 
 mysql_connection_test:
-	chpl -o ./bin/mysql_connection_test ./test/mysql/ConnectionTest.chpl -M ./src -M ./src/mysql
-	chpl -o ./bin/mysql_connection_test_autoc ./test/mysql/ConnectionTestAutocommit.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_connection_test ./test/mysql/ConnectionTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
+	chpl -o ./bin/mysql_connection_test_autoc ./test/mysql/ConnectionTestAutocommit.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 mysql_cursor_test:
-	chpl -o ./bin/mysql_cursor_test ./test/mysql/CursorTest.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_cursor_test ./test/mysql/CursorTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 mysql_field_test:
-	chpl -o ./bin/mysql_field_test ./test/mysql/FieldTest.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_field_test ./test/mysql/FieldTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 mysql_row_test:
-	chpl -o ./bin/mysql_row_test ./test/mysql/RowTest.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_row_test ./test/mysql/RowTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 mysql_transaction_test:
-	chpl -o ./bin/mysql_transaction_test ./test/mysql/TransactionTest.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_transaction_test ./test/mysql/TransactionTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 test_db_init:
-	chpl -o ./bin/test_db_init ./test/mysql/TestDBInit.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/test_db_init ./test/mysql/TestDBInit.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 clear:
 	rm	pgsql
