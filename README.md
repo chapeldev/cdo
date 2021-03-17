@@ -107,7 +107,7 @@ Do similar steps to compile mysql_ex2.
 ```chapel
 module Main {
     use DatabaseCommunicator;
-    use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder; // for Statement class
+    use DatabaseCommunicator.QueryBuilder; // for Statement class
     use MySQL;
 
     proc main() throws {
@@ -139,7 +139,7 @@ If using a TOML configuration file to specify connection parameters:
 ```chapel
 module Main {
     use DatabaseCommunicator;
-    use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder; // for Statement class
+    use DatabaseCommunicator.QueryBuilder; // for Statement class
     use MySQL;
 
     proc main() throws {

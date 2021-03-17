@@ -1,5 +1,5 @@
 use UnitTest;
-use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder;
+use DatabaseCommunicator.QueryBuilder;
 
 proc statementTestWithNoPlaceholder(test: borrowed Test) throws {
     var st1: Statement = new Statement("SELECT * FROM CONTACTS;");

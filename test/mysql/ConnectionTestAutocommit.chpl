@@ -1,6 +1,6 @@
 use DatabaseCommunicator;
 use DatabaseCommunicator.DatabaseCommunicationObjects.ErrorTypes;
-use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder;
+use DatabaseCommunicator.QueryBuilder;
 use UnitTest;
 use MySQL;
 

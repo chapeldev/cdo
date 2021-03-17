@@ -1,5 +1,5 @@
 use DatabaseCommunicator;
-use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder;
+use DatabaseCommunicator.QueryBuilder;
 use UnitTest;
 use MySQL;
 

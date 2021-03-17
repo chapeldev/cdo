@@ -1,7 +1,7 @@
 module MySQL {
     use DatabaseCommunicator.DatabaseCommunicationObjects.Implementables;
     use DatabaseCommunicator.DatabaseCommunicationObjects.ErrorTypes;
-    use DatabaseCommunicator.DatabaseCommunicationObjects.QueryBuilder;
+    use DatabaseCommunicator.QueryBuilder;
     use CPtr;
     use SysCTypes;
     use MySQLNative;
