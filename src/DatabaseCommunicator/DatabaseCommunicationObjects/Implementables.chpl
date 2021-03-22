@@ -1,10 +1,12 @@
 module Implementables {
     use DatabaseCommunicator.QueryBuilder;
+    use Map;
     /*
     The `IConnection` class provides an interface that needs to be
     implemented by all database connector classes.
     */
     class IConnection {
+        proc _getConnstringFromMap(connectionParams: map) throws {}
         proc _connect(connectionString: string, autocommit: bool = true) throws {}
         proc type getRequiredConnectionParameters(): string {return nil;}
         proc cursor(): ICursor {return nil;}

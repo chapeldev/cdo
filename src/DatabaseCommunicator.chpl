@@ -3,6 +3,7 @@ module DatabaseCommunicator {
     include module QueryBuilder;
     use IO;
     use TOML;
+    use Map;
 
     class ConnectionHandler {
         var _connection;
@@ -18,27 +19,22 @@ module DatabaseCommunicator {
         }
 
         pragma "no doc"
-        proc type _getParsedTomlParams(connParams: string, configFile: string, tomlFileDbconfigRootElem: string) throws {
+        proc type _getParsedTomlParams(type className, connParams: string, configFile: string, tomlFileDbconfigRootElem: string) throws {
             const DBCONF_ROOT_ELEM = tomlFileDbconfigRootElem;
 
             const tomlConfigFile = open(configFile, iomode.r);
             const configs = parseToml(tomlConfigFile);
             
-            var connString: string = "";
+            var connParamMap = new map(string, string);
 
             // build the connection string by taking values from the config file
             for (i, paramName) in zip(0.., connParams.split(';')) {
                 var connParamElem = configs![DBCONF_ROOT_ELEM];
                 var connParamValue = connParamElem![paramName];
                 var connParamValueString = connParamValue!.toString();
-                connString = connString + connParamValueString.strip("\"") + ";"; 
-                
-                // "due to some reason, the TOML parser returns the string enclosed in quotes
-                // hence the above line has to strip it
+                connParamMap.addOrSet(paramName, connParamValueString);
+                //connString = connString + connParamValueString.strip("\"") + ";"; 
             }
-
-            // eliminate the last ';'
-            connString = connString.strip(";");
 
             var autocommit: bool;
             
@@ -49,6 +45,7 @@ module DatabaseCommunicator {
                 autocommit = true;
             }
 
+            var connString: string = className._getConnstringFromMap(connParamMap);
             return (connString, autocommit);
         }
 
@@ -73,8 +70,7 @@ module DatabaseCommunicator {
             var connParams: string = className.getRequiredConnectionParameters();
             var connString: string;
             var autocommit: bool;
-            (connString, autocommit) = ConnectionHandler._getParsedTomlParams(connParams, configFile, tomlFileDbconfigRootElem);
-
+            (connString, autocommit) = ConnectionHandler._getParsedTomlParams(className, connParams, configFile, tomlFileDbconfigRootElem);
             var connection: owned ConnectionHandler = ConnectionHandler.ConnectionHandlerWithString(className, connString, autocommit);
             return connection;
         }

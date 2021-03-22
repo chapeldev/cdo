@@ -3,6 +3,7 @@ module MySQL {
     use DatabaseCommunicator.DatabaseCommunicationObjects.ErrorTypes;
     use DatabaseCommunicator.QueryBuilder;
     use CPtr;
+    use Map;
     use SysCTypes;
     use MySQLNative;
     //require "mysql.h";
@@ -67,6 +68,22 @@ module MySQL {
         */
         override proc type getRequiredConnectionParameters(): string {
             return "host;dbname;username;password";
+        }
+
+        pragma "no doc"
+        override proc type _getConnstringFromMap(connectionParams: map) {
+            var connString: string = "";
+            /*for (key, value) in connectionParams.items() {
+                connString = connString + value.strip("\"") + ";";
+
+                // "due to some reason, the TOML parser returns the string enclosed in quotes
+                // hence the above line has to strip it
+            }*/
+            connString = connString + connectionParams["host"].strip("\"") + ";";
+            connString = connString + connectionParams["dbname"].strip("\"") + ";";
+            connString = connString + connectionParams["username"].strip("\"") + ";";
+            connString = connString + connectionParams["password"].strip("\"");
+            return connString;
         }
 
         pragma "no doc"
