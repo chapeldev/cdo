@@ -33,7 +33,6 @@ module DatabaseCommunicator {
                 var connParamValue = connParamElem![paramName];
                 var connParamValueString = connParamValue!.toString();
                 connParamMap.addOrSet(paramName, connParamValueString);
-                //connString = connString + connParamValueString.strip("\"") + ";"; 
             }
 
             var autocommit: bool;
