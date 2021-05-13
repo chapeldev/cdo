@@ -29,7 +29,7 @@ pgsql:
 
 #WArning, you should run `mysql_config --cflags --libs` in order to know the library path
 mysqlex:
-	chpl -o ./bin/mysqlex ./example/exmysql.chpl ./src/mysql_helper.c ./src/mysql_helper.c    -M ./src -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
+	chpl -o ./bin/mysqlex ./example/exmysql.chpl ./src/mysql_helper.c ./src/mysql_helper.c  -M ./src -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
 
 update_mysql_ex:
 	chpl -o ./bin/update_mysql_ex ./example/update_mysql_ex.chpl  -M ./src  ./src/mysql_helper.c -I./src -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -latomic -ldl
@@ -44,7 +44,7 @@ insert_mysql_ex:
 
 
 # sqlitex:
-# 	chpl -o ./bin/sqlitex ./example/exsqlite.chpl    -M ./src
+# 	chpl -o ./bin/sqlitex ./example/exsqlite.chpl  -M ./src
 
 tests: statements_test test_db_init mysql_connection_test mysql_cursor_test mysql_field_test mysql_row_test mysql_transaction_test
 

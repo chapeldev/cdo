@@ -5,21 +5,21 @@
 
 if [ $(pwd) == *"test/mysql" ]
 then
-    cd ../..
+  cd ../..
 fi
 
 compiletests=1
 
 if [ $# -ge 1 ] && [ $1 == "--no-compile" ]
 then
-    compiletests=0
+  compiletests=0
 fi
 
 if [ $compiletests -eq 1 ]
 then
-    echo "[Info] Making tests..."
-    make tests
-    cp -f ./test/mysql/configs/*.toml ./bin
+  echo "[Info] Making tests..."
+  make tests
+  cp -f ./test/mysql/configs/*.toml ./bin
 fi
 cd ./bin
 

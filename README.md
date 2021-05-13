@@ -58,7 +58,7 @@ res = cursor.fetchone();
 
 // Queries passing tuple to formated query string.
 cursor.query("SELECT %s, %s FROM public.contacts",("email","name"));
-        
+    
 // iterate over all rows
 for row in cursor{
 //get row data by column name and print it.
@@ -105,65 +105,64 @@ Do similar steps to compile mysql_ex2.
 
 ### Code example
 ```chapel
-module Main {
-    use DatabaseCommunicator;
-    use DatabaseCommunicator.QueryBuilder; // for Statement class
-    use MySQL;
 
-    proc main() throws {
-        var conHandler = ConnectionHandler.ConnectionHandlerWithString(MySQLConnection, "localhost;testdb;username;password");
-        var cursor = conHandler.cursor();
+use DatabaseCommunicator;
+use DatabaseCommunicator.QueryBuilder; // for Statement class
+use MySQL;
 
-        var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
-        cursor.execute(new Statement(createStmt));
-        cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
+proc main() throws {
+  var conHandler = ConnectionHandler.ConnectionHandlerWithString(MySQLConnection, "localhost;testdb;username;password");
+  var cursor = conHandler.cursor();
 
-        var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
-        stmt.setValue(1, "B");
-        
-        cursor.execute(stmt);
+  var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
+  cursor.execute(new Statement(createStmt));
+  cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
 
-        for row in cursor.fetchall() {
-            writeln(row![0], "\t", row![1]);
-        }
+  var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
+  stmt.setValue(1, "B");
+  
+  cursor.execute(stmt);
 
-        cursor.close();
-        conHandler.commit();
-        conHandler.close();
-    }
+  for row in cursor.fetchall() {
+    writeln(row![0], "\t", row![1]);
+  }
+
+  cursor.close();
+  conHandler.commit();
+  conHandler.close();
 }
 ```
 
 If using a TOML configuration file to specify connection parameters:
 
 ```chapel
-module Main {
-    use DatabaseCommunicator;
-    use DatabaseCommunicator.QueryBuilder; // for Statement class
-    use MySQL;
 
-    proc main() throws {
-        var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbinfo.toml");
-        var cursor = conHandler.cursor();
+use DatabaseCommunicator;
+use DatabaseCommunicator.QueryBuilder; // for Statement class
+use MySQL;
 
-        var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
-        cursor.execute(new Statement(createStmt));
-        cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
+proc main() throws {
+  var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbinfo.toml");
+  var cursor = conHandler.cursor();
 
-        var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
-        stmt.setValue(1, "B");
-        
-        cursor.execute(stmt);
+  var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
+  cursor.execute(new Statement(createStmt));
+  cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
 
-        for row in cursor.fetchall() {
-            writeln(row![0], "\t", row![1]);
-        }
+  var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
+  stmt.setValue(1, "B");
+  
+  cursor.execute(stmt);
 
-        cursor.close();
-        conHandler.commit();
-        conHandler.close();
-    }
+  for row in cursor.fetchall() {
+    writeln(row![0], "\t", row![1]);
+  }
+
+  cursor.close();
+  conHandler.commit();
+  conHandler.close();
 }
+
 ```
 
 
@@ -212,7 +211,7 @@ res = cursor.fetchone();
 
 // Queries passing tuple to formated query string.
 cursor.query("SELECT %s, %s FROM contacts",("email","name"));
-        
+    
 // iterate over all rows
 for row in cursor{
 //get row data by column name and print it.

@@ -1,24 +1,24 @@
 module Main {
-    use DatabaseCommunicator;
-    use DatabaseCommunicator.QueryBuilder;
-    use MySQL;
+  use DatabaseCommunicator;
+  use DatabaseCommunicator.QueryBuilder;
+  use MySQL;
 
-    proc main() throws {
-        var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "../example/dbinfo.toml");
-        var cursor = conHandler.cursor();
+  proc main() throws {
+    var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "../example/dbinfo.toml");
+    var cursor = conHandler.cursor();
 
-        cursor.execute(new Statement("CREATE TABLE IF NOT EXISTS sample (Field1 int primary key, Field2 varchar(30), Field3 boolean);"));
+    cursor.execute(new Statement("CREATE TABLE IF NOT EXISTS sample (Field1 int primary key, Field2 varchar(30), Field3 boolean);"));
 
-        cursor.execute(new Statement("TRUNCATE TABLE sample;"));
-        cursor.execute(new Statement("SELECT count(*) FROM sample WHERE Field1 = 1;"));
-        var res = cursor.fetchone();
+    cursor.execute(new Statement("TRUNCATE TABLE sample;"));
+    cursor.execute(new Statement("SELECT count(*) FROM sample WHERE Field1 = 1;"));
+    var res = cursor.fetchone();
 
-        if (res![0]: int(32) == 0) {
-            cursor.execute(new Statement("INSERT INTO sample VALUES (1, 'P1', true)"));
-        }
-
-        conHandler.commit();
-        cursor.close();
-        conHandler.close();
+    if (res![0]: int(32) == 0) {
+      cursor.execute(new Statement("INSERT INTO sample VALUES (1, 'P1', true)"));
     }
+
+    conHandler.commit();
+    cursor.close();
+    conHandler.close();
+  }
 }
