@@ -482,21 +482,16 @@ module Cdo{
 
         proc __cdo_mapRelation(relationType:string, fieldName:string, localKey:string,
                                 remoteKey:string="id", pivotTable:string=""){
-            if(this.__cdo_rel_mapping.contains(fieldName)){
-
-                this.__cdo_rel_mapping[fieldName].localKey = localKey;
-                this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
+            if(this.__cdo_rel_mapping.contains(fieldName)){                
                 this.__cdo_rel_mapping[fieldName].relType = relationType;
-                this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
 
             }else{
-
                 this.__cdo_rel_mapping[fieldName] = new __CDO_ModelRelationInfo(relationType);
-                this.__cdo_rel_mapping[fieldName].localKey = localKey;
-                this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
-                this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
 
             }
+            this.__cdo_rel_mapping[fieldName].remoteKey = remoteKey;
+            this.__cdo_rel_mapping[fieldName].pivotTable = pivotTable;
+            this.__cdo_rel_mapping[fieldName].localKey = localKey;
         }
 
         proc __cdo_hasRelationMap(fieldname:string):bool{
