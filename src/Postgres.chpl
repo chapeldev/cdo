@@ -23,7 +23,6 @@ module Postgres{
     use Map;
     use List;
     use SysCTypes;
-    
     require "libpq-fe.h","-lpq";
     require "stdio.h";
 
