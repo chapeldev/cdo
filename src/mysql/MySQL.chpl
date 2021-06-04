@@ -52,6 +52,7 @@ module MySQL {
     var _prev_autocommit_state: bool;
     var _connected: bool;
 
+    pragma "no doc"
     /*
     This procedure returns the required parameters for the connection
     as a ;-separated string.
@@ -158,9 +159,6 @@ module MySQL {
       :type autocommit: bool
     */
     override proc setAutocommit(autocommit: bool) {
-      this._prev_autocommit_state = this._autocommit;
-      this._autocommit = autocommit;
-
       if (autocommit) {
         mysql_autocommit(this._cptr_mysqlconn, 1);
         mysql_query(this._cptr_mysqlconn, "SET autocommit = 1;");
@@ -169,6 +167,9 @@ module MySQL {
         mysql_autocommit(this._cptr_mysqlconn, 0);
         mysql_query(this._cptr_mysqlconn, "SET autocommit = 0;");
       }
+
+      this._prev_autocommit_state = this._autocommit;
+      this._autocommit = autocommit;
     }
 
     /*

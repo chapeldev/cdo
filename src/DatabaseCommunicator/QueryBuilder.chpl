@@ -1,5 +1,6 @@
 module QueryBuilder {
   use DatabaseCommunicator.DatabaseCommunicationObjects.ErrorTypes;
+  use List;
 
   /*** Query Building ***/
 
@@ -20,6 +21,22 @@ module QueryBuilder {
     var _toSubstitute: bool;
     var _finalStatement: string;
     var _placeholderRemains: bool;
+    var _nPlaceholders: int;
+    var _placeholderIndices: list(int);
+
+    pragma "no doc"
+    
+    proc _findPlaceholderIndices(statement: string) {
+      // extract the placeholder indices
+      // search for the pattern <space>?<int> in the statement for this
+      for (i, char) in zip(0.., statement) {
+        if (char == "?" && i > 0 && statement[i - 1].isSpace()) {
+          if (i < statement.size - 1 && statement[i + 1].isDigit()) {
+            _placeholderIndices.append(statement[i + 1]: int);
+          }
+        }
+      }
+    }
 
     /*
     Initialize an SQL statement.
@@ -34,6 +51,21 @@ module QueryBuilder {
       this._toSubstitute = toSubstitute;
       this._finalStatement = statement;
       this._placeholderRemains = toSubstitute;
+      
+      this._findPlaceholderIndices(statement);
+    }
+
+    proc init(statement: string, args...?n) {
+      this._statementUnformatted = statement;
+      this._toSubstitute = toSubstitute;
+      this._finalStatement = statement;
+      this._placeholderRemains = toSubstitute;
+
+      this._findPlaceholderIndices(statement);
+
+      for param at in 0..<n {
+        this.setValue(at + 1, args(at));
+      }
     }
 
     /*
@@ -46,6 +78,16 @@ module QueryBuilder {
     proc setValue(at: int, value: ?t) {
       if (!this._toSubstitute) {
         return;
+      }
+
+      if (this._placeholderIndices.size == 0) {
+        writeln("Error: setValue() called on a statement with no placeholders. This call will not affect the statement.");
+        halt();
+      }
+
+      if (this._placeholderIndices.count(at) == 0) {
+        writeln("Error: setValue() called on a statement with a placeholder index not present in the statement. This call will not affect the statement.");
+        halt();
       }
 
       var toBeReplacedWith: string;
