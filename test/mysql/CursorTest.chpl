@@ -7,7 +7,19 @@ proc cursorOpenExecuteTest(test: borrowed Test) throws {
   var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbconfig.toml");
   var cursor = conHandler.cursor();
 
+  // Note: This test exists to test if the cursor executes the statements properly
+  // and if an error is thrown in case the statement canno tbe executed
+
+  // Testing if each of these statements were executed would require manually connecting to the
+  // MySQL server and checking the records, as accessing and retrieving the records from here
+  // would need other functions of the library, which would devoid the purpose of this test
+  // being the first unit test for cursors
+
+  // TODO: Add tests for bad statements (syntactically incorrect, etc.)
   cursor.execute(new Statement("SELECT * FROM sample"));
+  cursor.execute(new Statement("INSERT INTO sample VALUES (89, 'GoodPerson', true)"));
+  cursor.execute(new Statement("UPDATE sample SET Field2 = 'NicePerson' WHERE Field1 = 89"));
+  cursor.execute(new Statement("DELETE FROM sample WHERE Field1 = 89"));
 
   cursor.close();
   conHandler.close();

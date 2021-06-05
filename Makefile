@@ -46,7 +46,7 @@ insert_mysql_ex:
 # sqlitex:
 # 	chpl -o ./bin/sqlitex ./example/exsqlite.chpl  -M ./src
 
-tests: statements_test test_db_init mysql_connection_test mysql_cursor_test mysql_field_test mysql_row_test mysql_transaction_test
+tests: statements_test test_db_init mysql_connection_test mysql_cursor_test mysql_field_test mysql_transaction_test
 
 mysql_ex1:
 	chpl -o ./bin/mysql_ex1 ./example/mysql_ex1.chpl -M ./src -M ./src/mysql
@@ -66,9 +66,6 @@ mysql_cursor_test:
 
 mysql_field_test:
 	chpl -o ./bin/mysql_field_test ./test/mysql/FieldTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
-
-mysql_row_test:
-	chpl -o ./bin/mysql_row_test ./test/mysql/RowTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 mysql_transaction_test:
 	chpl -o ./bin/mysql_transaction_test ./test/mysql/TransactionTest.chpl -M ./src -M ./src/mysql -I/usr/include/mysql

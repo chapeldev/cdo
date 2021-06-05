@@ -47,8 +47,5 @@ echo "[Info] Running CursorTest"
 echo "[Info] Running FieldTest"
 ./mysql_field_test
 
-echo "[Info] Running RowTest"
-./mysql_row_test
-
 echo "[Info] Running TransactionTest"
 ./mysql_transaction_test

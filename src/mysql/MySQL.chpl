@@ -546,17 +546,16 @@ module MySQL {
 
       if (howManyRows > this._nRows) {
         writeln("[Warning] MySQLCursor.fetchsome(howManyRows) called with howManyRows > _nRows; whole result set will be returned.");
+        howManyRows = this._nRows;
       }
 
-      else {
-        var counter = 0;
-        var _row = this.fetchone();
+      var counter = 0;
+      var _row = this.fetchone();
 
-        while (_row != nil && counter < this._nRows && counter < howManyRows) {
-          yield _row;
-          _row = this.fetchone();
-          counter += 1;
-        }
+      while (_row != nil && counter < this._nRows && counter < howManyRows) {
+        yield _row;
+        _row = this.fetchone();
+        counter += 1;
       }
     }
 

@@ -9,6 +9,8 @@ module QueryBuilder {
   something like `PreparedStatement` used by the JDBC in Java.
   Useful for ensuring proper data types and prevention of SQL injection.
 
+  Note that the placeholder indices should start from 1 in the statement.
+
   For example: `SELECT id FROM USERS WHERE name = ?1 and address = ?2`
   The `?1` and `?2` placeholders can be replaced with setValue.
   Note that there must be atleast one space before
@@ -21,7 +23,6 @@ module QueryBuilder {
     var _toSubstitute: bool;
     var _finalStatement: string;
     var _placeholderRemains: bool;
-    var _nPlaceholders: int;
     var _placeholderIndices: list(int);
 
     pragma "no doc"
@@ -54,15 +55,46 @@ module QueryBuilder {
       
       this._findPlaceholderIndices(statement);
     }
+    
+    /*
+    Initialize an SQL statement.
+    Two things about the replacement values should be noted:
+    - They should be in natural order (i.e, not in the order that the placeholders appear in 
+      the statement).
+    - The maximum placeholder index in the statement cannot be more than the number of replacement values.
+      :arg statement: The SQL statement
+      :type statement: string
+      :arg toSubstitue: True if the arg `statement` contains placeholder question marks to be substituted
+      :type toSubstitue: bool
+      
+      :arg args: Variadic arguments to substitute values in the placeholders in the statement
+    */
 
-    proc init(statement: string, args...?n) {
+    proc init(statement: string, toSubstitute: bool, args...?n) {
       this._statementUnformatted = statement;
       this._toSubstitute = toSubstitute;
       this._finalStatement = statement;
       this._placeholderRemains = toSubstitute;
 
+      // check if the maximum placeholder index is <= number of replacements given
+
+      // find the maximum placeholder index in the statement
       this._findPlaceholderIndices(statement);
 
+      var maxPlaceholderIndex: int = 1;
+      for placeholderIndex in this._placeholderIndices {
+        if (placeholderIndex > maxPlaceholderIndex) {
+          maxPlaceholderIndex = placeholderIndex;
+        }
+      }
+      
+      if (maxPlaceholderIndex > n) {
+        writeln("[Error] Maximum placeholder index in statement is greater than the number of replacements given.");
+        writeln("[Error] ...(Expected " + maxPlaceholderIndex: string + " replacements, found " + n: string + ".)");
+        halt();
+      }
+
+      // since we have the replacement values in natural order
       for param at in 0..<n {
         this.setValue(at + 1, args(at));
       }

@@ -8,7 +8,6 @@ tests = ["mysql/ConnectionTest.chpl",
      "mysql/ConnectionTestAutocommit.chpl",
      "mysql/CursorTest.chpl",
      "mysql/FieldTest.chpl",
-     "mysql/RowTest.chpl",
      "mysql/TransactionTest.chpl",
      "StatementsTest.chpl"]
 compopts = "-M ./src -M ./src/mysql -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -lssl -lcrypto -ldl -lresolv"
