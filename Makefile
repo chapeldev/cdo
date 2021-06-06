@@ -49,10 +49,10 @@ insert_mysql_ex:
 tests: statements_test test_db_init mysql_connection_test mysql_cursor_test mysql_field_test mysql_transaction_test
 
 mysql_ex1:
-	chpl -o ./bin/mysql_ex1 ./example/mysql_ex1.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_ex1 ./example/mysql_ex1.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 mysql_ex2:
-	chpl -o ./bin/mysql_ex2 ./example/mysql_ex2.chpl -M ./src -M ./src/mysql
+	chpl -o ./bin/mysql_ex2 ./example/mysql_ex2.chpl -M ./src -M ./src/mysql -I/usr/include/mysql
 
 statements_test:
 	chpl -o ./bin/statements_test ./test/StatementsTest.chpl -M ./src
