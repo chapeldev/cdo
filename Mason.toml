@@ -1,6 +1,18 @@
 
 [brick]
-name = "Cdo"
-version = "0.1.0"
-chplVersion = "1.16.0"
-authors = ["Marcos Cleison Silva Santana <marcoscleison@gmail.com>"]
+name = "DatabaseCommunicator"
+version = "0.2.0"
+chplVersion = "1.23.0"
+license = "Apache License 2.0"
+tests = ["mysql/ConnectionTest.chpl",
+     "mysql/ConnectionTestAutocommit.chpl",
+     "mysql/CursorTest.chpl",
+     "mysql/FieldTest.chpl",
+     "mysql/TransactionTest.chpl",
+     "StatementsTest.chpl"]
+compopts = "-M ./src -M ./src/mysql -I/usr/include/mysql -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -lssl -lcrypto -ldl -lresolv"
+
+[dependencies]
+
+[system]
+mysqlclient = "21.1.22"

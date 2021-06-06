@@ -3,68 +3,68 @@ use Cdo;
 use Mysql;
 
 proc main(){
-    //Open connection with Postgres database. Parametrs are host,username, database, password
+  //Open connection with Postgres database. Parametrs are host,username, database, password
 
-        var con = MysqlConnectionFactory("localhost", "root", "teste", "krishna");
+    var con = MysqlConnectionFactory("localhost", "root", "teste", "krishna");
 
-        //Open a cursor
-        var cursor = con.cursor();
-        //Queries from database
-        cursor.query("SELECT * FROM contacts"); 
-        //Get one row.
-        var res: Row = cursor.fetchone();
-        while(res.isValid()){
-            //print the results.
-            writeln(res);
-            //get the next row one.
-            res = cursor.fetchone();
-        }
+    //Open a cursor
+    var cursor = con.cursor();
+    //Queries from database
+    cursor.query("SELECT * FROM contacts"); 
+    //Get one row.
+    var res: Row = cursor.fetchone();
+    while(res.isValid()){
+      //print the results.
+      writeln(res);
+      //get the next row one.
+      res = cursor.fetchone();
+    }
 
-        // Queries passing tuple to formated query string.
-        cursor.query("SELECT %s, %s FROM contacts",("email","name"));
-        // writeln(cursor);
-        // iterate over all rows
-        for row in cursor{
-            //get row data by column name and print it.
-            writeln("name = ", row["name"]," email = ", row["email"] );
-        }
+    // Queries passing tuple to formated query string.
+    cursor.query("SELECT %s, %s FROM contacts",("email","name"));
+    // writeln(cursor);
+    // iterate over all rows
+    for row in cursor{
+      //get row data by column name and print it.
+      writeln("name = ", row["name"]," email = ", row["email"] );
+    }
 
-        cursor.query("SELECT * FROM contacts");
+    cursor.query("SELECT * FROM contacts");
 
-        // iterate over all rows
-        for row in cursor{
-            // get row data by column number and print it.
-            writeln("name = ", row[1] );
-        }
+    // iterate over all rows
+    for row in cursor{
+      // get row data by column number and print it.
+      writeln("name = ", row[1] );
+    }
 
 
-        cursor.close();
+    cursor.close();
 
 
 // Warning: Transaction is not working propertly.
-    // Begins new transaction
-    con.Begin();
+  // Begins new transaction
+  con.Begin();
 
-    var command =" \
-    CREATE TABLE IF NOT EXISTS COMPANY(\
-   ID INT PRIMARY KEY     NOT NULL,\
-   NAME           TEXT    NOT NULL,\
-   AGE            INT     NOT NULL,\
-   ADDRESS        CHAR(50),\
-   SALARY         REAL\
+  var command =" \
+  CREATE TABLE IF NOT EXISTS COMPANY(\
+   ID INT PRIMARY KEY   NOT NULL,\
+   NAME       TEXT  NOT NULL,\
+   AGE      INT   NOT NULL,\
+   ADDRESS    CHAR(50),\
+   SALARY     REAL\
 );";
 
-    var cursor2 = con.cursor();
+  var cursor2 = con.cursor();
 
-    cursor2.execute(command);
+  cursor2.execute(command);
 
-    cursor2.close();
+  cursor2.close();
 
 // Commits the transaction
-//    con.commit();
+//  con.commit();
 // Rolls back the operations
-    con.rollback(); 
-        con.close();
-        writeln("end");
-    }
+  con.rollback(); 
+    con.close();
+    writeln("end");
+  }
 }

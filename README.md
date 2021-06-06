@@ -58,7 +58,7 @@ res = cursor.fetchone();
 
 // Queries passing tuple to formated query string.
 cursor.query("SELECT %s, %s FROM public.contacts",("email","name"));
-        
+    
 // iterate over all rows
 for row in cursor{
 //get row data by column name and print it.
@@ -89,65 +89,80 @@ On Ubuntu do:
 ```bash
 sudo apt-get install libmysqlclient-dev
 ```
-3. Go to example/expq.chpl and inform database host, user, password. 
+3. Go to example/mysql_ex1.chpl and set database host, user, password. 
 4. Verify the mysql library path with ```bash mysql_config --cflags --libs ``` and edit Makefile.
 5. Go to repository folder and compile:
 ```bash
-make mysqlex
+make mysql_ex1
 ```
 6. Run the example:
 ```bash
-./mysqlex
+cd bin
+./mysql_ex1
 ```
+
+Do similar steps to compile mysql_ex2.
 
 ### Code example
 ```chapel
-module Main{
-use Cdo;
-use Mysql;
 
-proc main(){
-//Open connection to Mysql database. Parametrs are host,username, database, password
+use DatabaseCommunicator;
+use DatabaseCommunicator.QueryBuilder; // for Statement class
+use MySQL;
 
-var con = MysqlConnectionFactory("localhost", "username", "database", "password");
+proc main() throws {
+  var conHandler = ConnectionHandler.ConnectionHandlerWithString(MySQLConnection, "localhost;testdb;username;password");
+  var cursor = conHandler.cursor();
 
+  var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
+  cursor.execute(new Statement(createStmt));
+  cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
 
-//Open a cursor
-var cursor = con.cursor();
-//Queries from database
-cursor.query("SELECT * FROM contacts");
-//Get one row.
-var res:Row = cursor.fetchone();
-while(res.isValid()){
-//print the results.
-writeln(res);
-//get the next row one.
-res = cursor.fetchone();
+  var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
+  stmt.setValue(1, "B");
+  
+  cursor.execute(stmt);
+
+  for row in cursor.fetchall() {
+    writeln(row![0], "\t", row![1]);
+  }
+
+  cursor.close();
+  conHandler.commit();
+  conHandler.close();
+}
+```
+
+If using a TOML configuration file to specify connection parameters:
+
+```chapel
+
+use DatabaseCommunicator;
+use DatabaseCommunicator.QueryBuilder; // for Statement class
+use MySQL;
+
+proc main() throws {
+  var conHandler = ConnectionHandler.ConnectionHandlerWithConfig(MySQLConnection, "dbinfo.toml");
+  var cursor = conHandler.cursor();
+
+  var createStmt = "CREATE TABLE CONTACTS (id INT PRIMARY KEY, name VARCHAR(10));";
+  cursor.execute(new Statement(createStmt));
+  cursor.execute(new Statement("INSERT INTO CONTACTS VALUES (6, 'B');"));
+
+  var stmt: Statement = new Statement("SELECT * FROM CONTACTS WHERE name = ?1", true);
+  stmt.setValue(1, "B");
+  
+  cursor.execute(stmt);
+
+  for row in cursor.fetchall() {
+    writeln(row![0], "\t", row![1]);
+  }
+
+  cursor.close();
+  conHandler.commit();
+  conHandler.close();
 }
 
-// Queries passing tuple to formated query string.
-cursor.query("SELECT %s, %s FROM contacts",("email","name"));
-        
-// iterate over all rows
-for row in cursor{
-//get row data by column name and print it.
-writeln("name = ", row["name"]," email = ", row["email"] );
-}
-
-cursor.query("SELECT * FROM contacts");
-
-// iterate over all rows
-for row in cursor{
-//get row data by column number and print it.
-writeln("name = ", row[1] );
-}
-
-
-cursor.close();
-con.close();
-writeln("end");
-}
-}
 ```
 
 
@@ -196,7 +211,7 @@ res = cursor.fetchone();
 
 // Queries passing tuple to formated query string.
 cursor.query("SELECT %s, %s FROM contacts",("email","name"));
-        
+    
 // iterate over all rows
 for row in cursor{
 //get row data by column name and print it.
