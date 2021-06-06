@@ -80,24 +80,7 @@ module QueryBuilder {
 
       this.complete();
 
-      // check if the maximum placeholder index is <= number of replacements given
-
-      // find the maximum placeholder index in the statement
       this._findPlaceholderIndices(statement);
-
-      var maxPlaceholderIndex: int = 1;
-      for placeholderIndex in this._placeholderIndices {
-        if (placeholderIndex > maxPlaceholderIndex) {
-          maxPlaceholderIndex = placeholderIndex;
-        }
-      }
-      
-      if (maxPlaceholderIndex > n) {
-        writeln("[Error] Maximum placeholder index in statement is greater than the number of replacements given.");
-        writeln("[Error] ...(Expected " + maxPlaceholderIndex: string + " replacements, found " + n: string + ".)");
-        halt();
-      }
-
       // since we have the replacement values in natural order
       for param at in 0..<n {
         this.setValue(at + 1, args(at));
