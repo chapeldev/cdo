@@ -278,7 +278,7 @@ module MySQL {
       return this._fieldName;
     }
 
-    override proc getFieldIdx(): int(32) {
+    override proc getFieldIndex(): int(32) {
       return this._fieldIdx;
     }
 

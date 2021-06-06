@@ -111,19 +111,19 @@ proc getFieldsInfoTest(test: borrowed Test) throws {
   for (i, fieldInfo) in zip(0.., cursor.getFieldsInfo()) {
     select i {
       when 0 do {
-        test.assertTrue(fieldInfo.getFieldIdx() == 0);
+        test.assertTrue(fieldInfo.getFieldIndex() == 0);
         test.assertTrue(fieldInfo.getFieldName() == "Field1");
         test.assertTrue(fieldInfo.getFieldType() == MySQLFieldType.MYSQL_TYPE_LONG);
       }
 
       when 1 do {
-        test.assertTrue(fieldInfo.getFieldIdx() == 1);
+        test.assertTrue(fieldInfo.getFieldIndex() == 1);
         test.assertTrue(fieldInfo.getFieldName() == "Field2");
         test.assertTrue(fieldInfo.getFieldType() == MySQLFieldType.MYSQL_TYPE_VAR_STRING);
       }
 
       when 2 do {
-        test.assertTrue(fieldInfo.getFieldIdx() == 2);
+        test.assertTrue(fieldInfo.getFieldIndex() == 2);
         test.assertTrue(fieldInfo.getFieldName() == "Field3");
         test.assertTrue(fieldInfo.getFieldType() == MySQLFieldType.MYSQL_TYPE_TINY);
       }

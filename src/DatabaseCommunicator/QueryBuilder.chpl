@@ -33,7 +33,11 @@ module QueryBuilder {
       for (i, char) in zip(0.., statement) {
         if (char == "?" && i > 0 && statement[i - 1].isSpace()) {
           if (i < statement.size - 1 && statement[i + 1].isDigit()) {
-            _placeholderIndices.append(statement[i + 1]: int);
+            try {
+              _placeholderIndices.append(statement[i + 1]: int);
+            } catch {
+              writeln("[Internal Error] conversion of value from string to int failed when finding placeholder indices.");
+            }
           }
         }
       }
@@ -53,21 +57,19 @@ module QueryBuilder {
       this._finalStatement = statement;
       this._placeholderRemains = toSubstitute;
       
+      this.complete();
       this._findPlaceholderIndices(statement);
     }
     
     /*
     Initialize an SQL statement.
-    Two things about the replacement values should be noted:
-    - They should be in natural order (i.e, not in the order that the placeholders appear in 
-      the statement).
-    - The maximum placeholder index in the statement cannot be more than the number of replacement values.
+    The replacement values (wrgs) should be in natural order (i.e, not in the order that the placeholders appear in the statement).
       :arg statement: The SQL statement
       :type statement: string
       :arg toSubstitue: True if the arg `statement` contains placeholder question marks to be substituted
       :type toSubstitue: bool
       
-      :arg args: Variadic arguments to substitute values in the placeholders in the statement
+      :arg args: Replacement values for the placeholders in the statement
     */
 
     proc init(statement: string, toSubstitute: bool, args...?n) {
@@ -75,6 +77,8 @@ module QueryBuilder {
       this._toSubstitute = toSubstitute;
       this._finalStatement = statement;
       this._placeholderRemains = toSubstitute;
+
+      this.complete();
 
       // check if the maximum placeholder index is <= number of replacements given
 
