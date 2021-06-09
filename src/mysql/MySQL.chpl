@@ -6,7 +6,7 @@ module MySQL {
   use Map;
   use SysCTypes;
   use MySQLNative;
-
+  use Regexp;
   /*
   Enum that describes the data type held by a field in MySQL.
   Note: MySQL uses TINYINT(1) internally for the BOOLEAN
@@ -99,7 +99,7 @@ module MySQL {
       var database: string;
       var username: string;
       var password: string;
-
+      var myRegexp = compile("[[:space:]]*");
       // let's extract the relevant info from the connection string
       for (i, str) in zip(0.., connectionString.split(';')) {
         select i {
@@ -112,9 +112,12 @@ module MySQL {
       }
 
       // Throw errors if anything wrong: (TODO: can be improved)
-      if (host == '' || database == '') {
+      var host_match = myRegexp.match(host).matched;
+      var db_match = myRegexp.match(database).matched;
+      if (host_match || db_match){
         throw new ConnectionStringFormatError();
       }
+
 
       this._autocommit = autocommit;
       this._prev_autocommit_state = autocommit;
